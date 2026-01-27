@@ -1,0 +1,403 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import "tailwindcss"; 
+
+/* ============================================================================
+    SALUD DESIGN SYSTEM
+    Modern Healthcare UI with Trust & Clarity
+    ============================================================================ */ 
+
+/* Custom CSS Variables for the Design System */
+@theme {
+   /* Primary - Healthcare Blue (Trust, Professionalism) */
+   --color-primary-50: #eff6ff;
+   --color-primary-100: #dbeafe;
+   --color-primary-200: #bfdbfe;
+   --color-primary-300: #93c5fd;
+   --color-primary-400: #60a5fa;
+   --color-primary-500: #3b82f6;
+   --color-primary-600: #2563eb;
+   --color-primary-700: #1d4ed8;
+   --color-primary-800: #1e40af;
+   --color-primary-900: #1e3a8a;
+   --color-primary-950: #172554; 
+
+   /* Success - Medical Green (Health, Positive) */
+   --color-success-50: #ecfdf5;
+   --color-success-100: #d1fae5;
+   --color-success-200: #a7f3d0;
+   --color-success-300: #6ee7b7;
+   --color-success-400: #34d399;
+   --color-success-500: #10b981;
+   --color-success-600: #059669;
+   --color-success-700: #047857;
+   --color-success-800: #065f46;
+   --color-success-900: #064e3b; 
+
+   /* Warning - Amber (Attention, Caution) */
+   --color-warning-50: #fffbeb;
+   --color-warning-100: #fef3c7;
+   --color-warning-200: #fde68a;
+   --color-warning-300: #fcd34d;
+   --color-warning-400: #fbbf24;
+   --color-warning-500: #f59e0b;
+   --color-warning-600: #d97706;
+   --color-warning-700: #b45309;
+   --color-warning-800: #92400e;
+   --color-warning-900: #78350f; 
+
+   /* Danger - Red (Alerts, Critical) */
+   --color-danger-50: #fef2f2;
+   --color-danger-100: #fee2e2;
+   --color-danger-200: #fecaca;
+   --color-danger-300: #fca5a5;
+   --color-danger-400: #f87171;
+   --color-danger-500: #ef4444;
+   --color-danger-600: #dc2626;
+   --color-danger-700: #b91c1c;
+   --color-danger-800: #991b1b;
+   --color-danger-900: #7f1d1d; 
+
+   /* Neutral - Slate (Clean, Professional) */
+   --color-slate-50: #f8fafc;
+   --color-slate-100: #f1f5f9;
+   --color-slate-200: #e2e8f0;
+   --color-slate-300: #cbd5e1;
+   --color-slate-400: #94a3b8;
+   --color-slate-500: #64748b;
+   --color-slate-600: #475569;
+   --color-slate-700: #334155;
+   --color-slate-800: #1e293b;
+   --color-slate-900: #0f172a;
+   --color-slate-950: #020617; 
+
+   /* Aleo Brand Purple (Blockchain Identity) */
+   --color-aleo-50: #faf5ff;
+   --color-aleo-100: #f3e8ff;
+   --color-aleo-200: #e9d5ff;
+   --color-aleo-300: #d8b4fe;
+   --color-aleo-400: #c084fc;
+   --color-aleo-500: #a855f7;
+   --color-aleo-600: #9333ea;
+   --color-aleo-700: #7e22ce;
+   --color-aleo-800: #6b21a8;
+   --color-aleo-900: #581c87; 
+
+   /* Typography Scale */
+   --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+   --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace; 
+
+   /* Shadows */
+   --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+   --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+   --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+   --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+   --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+   --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+   --shadow-glow: 0 0 20px rgb(59 130 246 / 0.3);
+   --shadow-glow-success: 0 0 20px rgb(16 185 129 / 0.3);
+   --shadow-glow-aleo: 0 0 20px rgb(168 85 247 / 0.3); 
+
+   /* Border Radius */
+   --radius-sm: 0.375rem;
+   --radius-md: 0.5rem;
+   --radius-lg: 0.75rem;
+   --radius-xl: 1rem;
+   --radius-2xl: 1.5rem;
+   --radius-full: 9999px; 
+
+   /* Animation Durations */
+   --duration-fast: 150ms;
+   --duration-normal: 200ms;
+   --duration-slow: 300ms;
+   --duration-slower: 500ms;
+  } 
+
+/* Base Styles */
+* {
+  box-sizing: border-box;
+} 
+
+html {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+} 
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background-color: var(--color-slate-50);
+  color: var(--color-slate-900);
+} 
+
+#root {
+  min-height: 100vh;
+} 
+
+/* Focus Styles - Accessibility */
+:focus-visible {
+  outline: 2px solid var(--color-primary-500);
+  outline-offset: 2px;
+} 
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+} 
+
+::-webkit-scrollbar-track {
+  background: var(--color-slate-100);
+  border-radius: var(--radius-full);
+} 
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-slate-300);
+  border-radius: var(--radius-full);
+} 
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-slate-400);
+} 
+
+/* Selection */
+::selection {
+  background-color: var(--color-primary-200);
+  color: var(--color-primary-900);
+} 
+
+/* Animation Keyframes */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+} 
+
+@keyframes fadeInUp {
+  from { 
+    opacity: 0; 
+    transform: translateY(10px);
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0);
+  }
+} 
+
+@keyframes fadeInDown {
+  from { 
+    opacity: 0; 
+    transform: translateY(-10px);
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0);
+  }
+} 
+
+@keyframes scaleIn {
+  from { 
+    opacity: 0; 
+    transform: scale(0.95);
+  }
+  to { 
+    opacity: 1; 
+    transform: scale(1);
+  }
+} 
+
+@keyframes slideInRight {
+  from { 
+    opacity: 0; 
+    transform: translateX(20px);
+  }
+  to { 
+    opacity: 1; 
+    transform: translateX(0);
+  }
+} 
+
+@keyframes pulse-ring {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1);
+    opacity: 0.4;
+  }
+  100% {
+    transform: scale(0.8);
+    opacity: 0.8;
+  }
+} 
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+} 
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+} 
+
+/* Utility Classes */
+.animate-fade-in {
+  animation: fadeIn var(--duration-normal) ease-out;
+} 
+
+.animate-fade-in-up {
+  animation: fadeInUp var(--duration-slow) ease-out;
+} 
+
+.animate-fade-in-down {
+  animation: fadeInDown var(--duration-slow) ease-out;
+} 
+
+.animate-scale-in {
+  animation: scaleIn var(--duration-slow) ease-out;
+} 
+
+.animate-slide-in-right {
+  animation: slideInRight var(--duration-slow) ease-out;
+} 
+
+.animate-pulse-ring {
+  animation: pulse-ring 2s ease-in-out infinite;
+} 
+
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--color-slate-200) 0%,
+    var(--color-slate-100) 50%,
+    var(--color-slate-200) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+} 
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+} 
+
+/* Glass Effect */
+.glass {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+} 
+
+.glass-dark {
+  background: rgba(15, 23, 42, 0.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+} 
+
+/* Gradient Backgrounds */
+.bg-gradient-primary {
+  background: linear-gradient(135deg, var(--color-primary-500) 0%, var(--color-primary-700) 100%);
+} 
+
+.bg-gradient-success {
+  background: linear-gradient(135deg, var(--color-success-500) 0%, var(--color-success-700) 100%);
+} 
+
+.bg-gradient-aleo {
+  background: linear-gradient(135deg, var(--color-aleo-500) 0%, var(--color-aleo-700) 100%);
+} 
+
+.bg-gradient-mesh {
+  background: 
+    radial-gradient(at 40% 20%, var(--color-primary-100) 0px, transparent 50%),
+    radial-gradient(at 80% 0%, var(--color-aleo-100) 0px, transparent 50%),
+    radial-gradient(at 0% 50%, var(--color-success-100) 0px, transparent 50%),
+    radial-gradient(at 80% 50%, var(--color-primary-50) 0px, transparent 50%),
+    radial-gradient(at 0% 100%, var(--color-aleo-50) 0px, transparent 50%),
+    var(--color-slate-50);
+} 
+
+/* Card Hover Effects */
+.card-hover {
+  transition: all var(--duration-normal) ease;
+} 
+
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+} 
+
+/* Button Base Reset */
+button {
+  font-family: inherit;
+  cursor: pointer;
+} 
+
+/* Input Base Reset */
+input, textarea, select {
+  font-family: inherit;
+} 
+
+/* Radix UI Overrides */
+[data-radix-popper-content-wrapper] {
+  z-index: 50 !important;
+} 
+
+/* Toast Animations */
+[data-state="open"][data-swipe-direction="right"] {
+  animation: slideInRight var(--duration-slow) ease-out;
+} 
+
+/* Dialog Overlay */
+.dialog-overlay {
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+} 
+
+/* QR Code Container */
+.qr-container {
+  background: white;
+  padding: 1rem;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+} 
+
+/* Record Type Colors */
+.record-type-1 { --record-color: var(--color-primary-500); }
+.record-type-2 { --record-color: var(--color-success-500); }
+.record-type-3 { --record-color: var(--color-warning-500); }
+.record-type-4 { --record-color: var(--color-aleo-500); }
+.record-type-5 { --record-color: var(--color-danger-500); }
+.record-type-6 { --record-color: #06b6d4; }
+.record-type-7 { --record-color: #8b5cf6; }
+.record-type-8 { --record-color: #ec4899; }
+.record-type-9 { --record-color: #14b8a6; }
+.record-type-10 { --record-color: var(--color-slate-500); } 
+
+/* Skeleton Loading */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--color-slate-200) 0%,
+    var(--color-slate-100) 50%,
+    var(--color-slate-200) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: var(--radius-md);
+} 
+
+/* Print Styles */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+}

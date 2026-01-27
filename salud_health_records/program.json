@@ -1,0 +1,9 @@
+{
+  "program": "salud_health_records.aleo",
+  "version": "0.1.0",
+  "description": "Privacy-preserving health records management on Aleo. Enables patients to store encrypted medical records and share them temporarily with healthcare providers via secure access tokens.",
+  "license": "MIT",
+  "leo": "3.4.0",
+  "dependencies": null,
+  "dev_dependencies": null
+}
