@@ -50,13 +50,13 @@ export function useAleo() {
   const { connect: connectUser, disconnect: disconnectUser, setBalance } = useUserStore();
   const { addRecord, createAccessGrant, setLoading, setError } = useRecordsStore();
 
-  // Get wallet adapter state (used for Leo Wallet viewing)
+  // Get wallet adapter state (not used for transactions)
   const { connected: walletConnected, publicKey: walletPublicKey } = useWallet();
 
   /**
    * Connect wallet with private key via backend
    */
-  const connect = useCallback(async (userPrivateKey: string): Promise<boolean> => {
+  const connect = useCallback(async (userPrivateKey: string, userName?: string): Promise<boolean> => {
     setIsConnecting(true);
     try {
       console.log('[Frontend] Connecting to backend API...');
@@ -75,8 +75,8 @@ export function useAleo() {
       setPrivateKeyState(userPrivateKey);
       setAccount({ address, viewKey });
 
-      // Update user store
-      connectUser(address, viewKey);
+      // Update user store with name
+      connectUser(address, viewKey, userName);
 
       // Fetch balance
       const balanceResult = await api.getBalance(newSessionId);
@@ -198,7 +198,7 @@ export function useAleo() {
         setTransaction({
           isProcessing: true,
           status: 'broadcasting',
-          message: 'Submitting transaction to blockchain...',
+          message: 'Generating proofs and submitting to blockchain (30-60s)...',
           transactionId: null,
           error: null,
         });

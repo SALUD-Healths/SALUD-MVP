@@ -7,7 +7,7 @@ export const ALEO_NETWORK = 'testnet';
 export const ALEO_API_URL = 'https://api.explorer.provable.com/v1';
 
 // Program configuration
-export const PROGRAM_ID = 'salud_health_records.aleo';
+export const PROGRAM_ID = 'salud_health_records_v2.aleo';
 
 // Block timing (Aleo produces ~1 block per 15 seconds)
 export const BLOCK_TIME_SECONDS = 15;

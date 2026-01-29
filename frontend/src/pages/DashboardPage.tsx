@@ -15,7 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { PageHeader, EmptyState } from '@/components/layout';
 import { RecordCard, CreateRecordModal, ShareRecordModal } from '@/components/records';
-import { useRecordsStore } from '@/store';
+import { useRecordsStore, useUserStore } from '@/store';
 import type { MedicalRecord } from '@/types/records';
 
 export function DashboardPage() {
@@ -25,6 +25,7 @@ export function DashboardPage() {
 
   const records = useRecordsStore((state) => state.records);
   const accessGrants = useRecordsStore((state) => state.accessGrants);
+  const user = useUserStore((state) => state.user);
   
   // Compute active grants with useMemo to avoid infinite loops
   const activeGrants = useMemo(() => {
@@ -69,7 +70,7 @@ export function DashboardPage() {
   return (
     <div className="space-y-8">
       <PageHeader
-        title="Welcome back"
+        title={user?.name ? `Welcome back, ${user.name}` : 'Welcome back'}
         description="Manage your private health records on Aleo"
         action={
           <Button onClick={() => setCreateModalOpen(true)}>

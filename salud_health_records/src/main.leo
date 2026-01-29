@@ -20,14 +20,15 @@
 //
 // ============================================================================
 
-program salud_health_records.aleo {
+program salud_health_records_v2.aleo {
 
     // ========================================================================
     // PROGRAM CONFIGURATION
     // ========================================================================
-    
-    // Prevent unauthorized program upgrades in production
-    @noupgrade
+
+    // @admin allows upgrades during testnet development
+    // Change to @noupgrade before mainnet deployment for production security
+    @admin(address = "aleo1gl4a57rcxyjvmzcgjscjqe466ecdr7uk4gdp7sf5pctu6tjvv5qs60lw8y")
     async constructor() {}
 
     // ========================================================================
@@ -207,7 +208,7 @@ program salud_health_records.aleo {
         make_discoverable: bool
     ) {
         // Increment patient's record count
-        let patient_key: field = BHP256::hash_to_field(patient);
+        let patient_key: field = patient as field;
         let current_count: u64 = patient_record_count.get_or_use(patient_key, 0u64);
         patient_record_count.set(patient_key, current_count + 1u64);
 

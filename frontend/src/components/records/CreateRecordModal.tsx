@@ -31,6 +31,7 @@ import { Input, Textarea } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { RECORD_TYPES, type RecordType } from '@/types/records';
 import { useAleo } from '@/hooks/useAleo';
+import { NotificationModal } from '@/components/ui/notification-modal';
 
 // Icon mapping
 const iconMap: Record<string, React.ReactNode> = {
@@ -72,6 +73,10 @@ export function CreateRecordModal({ open, onOpenChange, onSuccess }: CreateRecor
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [errors, setErrors] = useState<{ title?: string; description?: string }>({});
+  const [notificationOpen, setNotificationOpen] = useState(false);
+  const [notificationType, setNotificationType] = useState<'success' | 'error'>('success');
+  const [notificationTitle, setNotificationTitle] = useState('');
+  const [notificationMessage, setNotificationMessage] = useState('');
 
   const { createRecord, transaction, clearTransaction, isConnected } = useAleo();
 
@@ -151,11 +156,26 @@ export function CreateRecordModal({ open, onOpenChange, onSuccess }: CreateRecor
     console.log('[CreateRecordModal] createRecord result:', result);
 
     if (result) {
-      // Success - close modal after a brief delay to show success state
+      // Success - close modal after showing success state for 2 seconds
       setTimeout(() => {
         handleClose();
         onSuccess?.();
-      }, 1500);
+        // Show success notification
+        setNotificationType('success');
+        setNotificationTitle('Record Created!');
+        setNotificationMessage('Medical record created successfully and submitted to the Aleo blockchain!');
+        setNotificationOpen(true);
+      }, 2000);
+    } else {
+      // Error - close modal and show error notification after 2 seconds
+      setTimeout(() => {
+        handleClose();
+        // Show error notification
+        setNotificationType('error');
+        setNotificationTitle('Creation Failed!');
+        setNotificationMessage(transaction.error || 'Failed to create medical record. Please try again.');
+        setNotificationOpen(true);
+      }, 2000);
     }
   };
 
@@ -424,9 +444,10 @@ export function CreateRecordModal({ open, onOpenChange, onSuccess }: CreateRecor
                   handleSubmit();
                 }}
                 loading={transaction.isProcessing}
+                disabled={transaction.isProcessing}
               >
                 {transaction.isProcessing
-                  ? (transaction.message || 'Creating...')
+                  ? 'Processing...'
                   : transaction.status === 'confirmed'
                     ? 'Created!'
                     : 'Create Record'
@@ -436,6 +457,15 @@ export function CreateRecordModal({ open, onOpenChange, onSuccess }: CreateRecor
           )}
         </DialogFooter>
       </DialogContent>
+
+      {/* Success/Error Notification Modal */}
+      <NotificationModal
+        open={notificationOpen}
+        onOpenChange={setNotificationOpen}
+        type={notificationType}
+        title={notificationTitle}
+        message={notificationMessage}
+      />
     </Dialog>
   );
 }

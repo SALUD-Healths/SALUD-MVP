@@ -133,6 +133,7 @@ export interface QRCodeData {
  */
 export interface User {
   address: string;
+  name?: string;
   viewKey?: string;
   isConnected: boolean;
   balance?: number;

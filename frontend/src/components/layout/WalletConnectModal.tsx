@@ -22,6 +22,7 @@ interface WalletConnectModalProps {
 
 export function WalletConnectModal({ open, onOpenChange }: WalletConnectModalProps) {
   const [privateKey, setPrivateKey] = useState('');
+  const [userName, setUserName] = useState('');
   const [showKey, setShowKey] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isConnectingDemo, setIsConnectingDemo] = useState(false);
@@ -85,7 +86,7 @@ export function WalletConnectModal({ open, onOpenChange }: WalletConnectModalPro
 
     setError(null);
     try {
-      const success = await connectWithPrivateKey(privateKey);
+      const success = await connectWithPrivateKey(privateKey, userName.trim() || undefined);
 
       console.log('[WalletConnect] Connect result:', success);
       console.log('[WalletConnect] Checking sessionStorage...');
@@ -97,6 +98,7 @@ export function WalletConnectModal({ open, onOpenChange }: WalletConnectModalPro
         // Wait a bit to ensure state updates
         await new Promise(resolve => setTimeout(resolve, 500));
         setPrivateKey('');
+        setUserName('');
         onOpenChange(false);
       } else {
         console.error('[WalletConnect] Connection returned false');
@@ -163,106 +165,31 @@ export function WalletConnectModal({ open, onOpenChange }: WalletConnectModalPro
         </DialogHeader>
 
         <div className="space-y-4 py-4">
-          {/* Leo Wallet - Direct Connection */}
-          <div className="space-y-2">
-            <p className="text-sm font-medium text-slate-700">Browser Wallet</p>
-            <button
-              onClick={async () => {
-                setIsConnectingLeo(true);
-                setError(null);
-                try {
-                  // Find Leo wallet adapter
-                  const leoWallet = wallets.find(w => w.adapter.name === 'Leo Wallet');
-                  if (leoWallet) {
-                    // First select the wallet
-                    await select(leoWallet.adapter.name);
-                    // Then explicitly connect with proper parameters
-                    await connect(
-                      DecryptPermission.UponRequest,
-                      WalletAdapterNetwork.TestnetBeta
-                    );
-                    // Connection successful, the useEffect will handle closing the modal
-                  } else {
-                    setError('Leo Wallet not found. Please install the Leo Wallet extension.');
-                  }
-                } catch (err) {
-                  console.error('Leo Wallet connection error:', err);
-                  setError(err instanceof Error ? err.message : 'Failed to connect Leo Wallet');
-                } finally {
-                  setIsConnectingLeo(false);
-                }
-              }}
-              disabled={isLoading || isConnectingLeo}
-              className={`
-                w-full flex items-center gap-3 p-3 rounded-xl border-2 transition-all
-                bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700
-                text-white font-medium
-                disabled:opacity-60 disabled:cursor-not-allowed
-                ${isConnectingLeo ? 'opacity-70' : ''}
-              `}
-            >
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/20 backdrop-blur">
-                <Wallet size={20} className="text-white" />
-              </div>
-              <div className="flex-1 text-left">
-                <div className="flex items-center gap-2">
-                  <span className="font-medium">Leo Wallet</span>
-                  {wallets.some(w => w.adapter.name === 'Leo Wallet' && w.readyState === 'Installed') && (
-                    <span className="text-xs bg-white/20 px-1.5 py-0.5 rounded">
-                      Detected
-                    </span>
-                  )}
-                </div>
-                <p className="text-xs text-white/80">
-                  Connect with browser extension (view-only)
-                </p>
-              </div>
-              {isConnectingLeo ? (
-                <Loader2 size={20} className="animate-spin" />
-              ) : (
-                <ChevronDown size={20} className="-rotate-90" />
-              )}
-            </button>
-            {(connecting || isConnectingLeo) && (
-              <p className="text-xs text-slate-500 flex items-center gap-1">
-                <Loader2 size={12} className="animate-spin" />
-                Connecting to Leo Wallet...
-              </p>
-            )}
-
-            {/* Leo Wallet limitation notice */}
-            <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded-lg">
-              <p className="text-xs text-amber-800">
-                <strong>Note:</strong> To create medical records, use "Import with Private Key" below. Leo Wallet is for viewing only.
-              </p>
-            </div>
-          </div>
-
-          {/* Divider */}
-          <div className="relative py-2">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-slate-200" />
-            </div>
-            <div className="relative flex justify-center text-xs">
-              <span className="bg-white px-2 text-slate-500">or</span>
-            </div>
-          </div>
-
           {/* Import with Private Key Section */}
-          <div className="space-y-3 border-2 border-blue-200 bg-blue-50/50 rounded-xl p-4">
+          <div className="space-y-3">
             <div className="flex items-center gap-2">
-              <Key size={18} className="text-blue-600" />
+              <Key size={18} className="text-aleo-600" />
               <label className="text-sm font-semibold text-slate-900">
-                Import with Private Key
+                Connect with Private Key
               </label>
-              <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded ml-auto">
-                Recommended
-              </span>
             </div>
 
             <p className="text-xs text-slate-600">
-              Use your Aleo private key to create and manage medical records
+              Enter your Aleo private key to create and manage your medical records securely
             </p>
+
+            <div>
+              <label className="text-xs font-medium text-slate-700 mb-1 block">
+                Your Name (optional)
+              </label>
+              <Input
+                type="text"
+                placeholder="e.g., Damilare"
+                value={userName}
+                onChange={(e) => setUserName(e.target.value)}
+                className="mb-3"
+              />
+            </div>
 
             <div className="relative">
               <Input

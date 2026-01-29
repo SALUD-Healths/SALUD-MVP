@@ -1,4 +1,4 @@
-program salud_health_records.aleo;
+program salud_health_records_v2.aleo;
 
 record MedicalRecord:
     owner as address.private;
@@ -73,14 +73,14 @@ function create_record:
     cast self.caller r12 r5 r0 r1 r2 r3 r4 0u32 1u8 into r13 as MedicalRecord.record;
     async create_record self.caller r12 r4 r7 into r14;
     output r13 as MedicalRecord.record;
-    output r14 as salud_health_records.aleo/create_record.future;
+    output r14 as salud_health_records_v2.aleo/create_record.future;
 
 finalize create_record:
     input r0 as address.public;
     input r1 as field.public;
     input r2 as u8.public;
     input r3 as boolean.public;
-    hash.bhp256 r0 into r4 as field;
+    cast r0 into r4 as field;
     get.or_use patient_record_count[r4] 0u64 into r5;
     add r5 1u64 into r6;
     set r6 into patient_record_count[r4];
@@ -107,7 +107,7 @@ function grant_access:
     cast r0.owner r0.record_id r0.data_hash r0.data_part1 r0.data_part2 r0.data_part3 r0.data_part4 r0.record_type r0.created_at r0.version into r11 as MedicalRecord.record;
     output r11 as MedicalRecord.record;
     output r9 as field.private;
-    output r10 as salud_health_records.aleo/grant_access.future;
+    output r10 as salud_health_records_v2.aleo/grant_access.future;
 
 finalize grant_access:
     input r0 as address.public;
@@ -125,7 +125,7 @@ function verify_access:
     input r1 as address.private;
     input r2 as field.private;
     async verify_access r0 r1 r2 into r3;
-    output r3 as salud_health_records.aleo/verify_access.future;
+    output r3 as salud_health_records_v2.aleo/verify_access.future;
 
 finalize verify_access:
     input r0 as field.public;
@@ -144,7 +144,7 @@ finalize verify_access:
 function revoke_access:
     input r0 as field.private;
     async revoke_access self.caller r0 into r1;
-    output r1 as salud_health_records.aleo/revoke_access.future;
+    output r1 as salud_health_records_v2.aleo/revoke_access.future;
 
 finalize revoke_access:
     input r0 as address.public;
@@ -158,7 +158,7 @@ finalize revoke_access:
 function get_access_info:
     input r0 as field.private;
     async get_access_info r0 into r1;
-    output r1 as salud_health_records.aleo/get_access_info.future;
+    output r1 as salud_health_records_v2.aleo/get_access_info.future;
 
 finalize get_access_info:
     input r0 as field.public;
@@ -184,4 +184,4 @@ function compute_access_token:
     output r5 as field.private;
 
 constructor:
-    assert.eq edition 0u16;
+    assert.eq program_owner aleo1gl4a57rcxyjvmzcgjscjqe466ecdr7uk4gdp7sf5pctu6tjvv5qs60lw8y;

@@ -190,11 +190,12 @@ export const useRecordsStore = create<RecordsState>()(
 interface UserState {
   user: User | null;
   isConnecting: boolean;
-  
+
   // Actions
-  connect: (address: string, viewKey?: string) => void;
+  connect: (address: string, viewKey?: string, name?: string) => void;
   disconnect: () => void;
   setBalance: (balance: number) => void;
+  setName: (name: string) => void;
 }
 
 export const useUserStore = create<UserState>()(
@@ -207,10 +208,11 @@ export const useUserStore = create<UserState>()(
       },
       isConnecting: false,
 
-      connect: (address, viewKey) => {
+      connect: (address, viewKey, name) => {
         set({
           user: {
             address,
+            name,
             viewKey,
             isConnected: true,
           },
@@ -225,6 +227,12 @@ export const useUserStore = create<UserState>()(
       setBalance: (balance) => {
         set((state) => ({
           user: state.user ? { ...state.user, balance } : null,
+        }));
+      },
+
+      setName: (name) => {
+        set((state) => ({
+          user: state.user ? { ...state.user, name } : null,
         }));
       },
     }),
