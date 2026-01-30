@@ -244,7 +244,7 @@ app.post('/api/records/create', async (req, res) => {
  */
 app.post('/api/access/grant', async (req, res) => {
   try {
-    const { sessionId, recordId, doctorAddress, accessDuration } = req.body;
+    const { sessionId, recordId, doctorAddress, accessDuration, nonce, dataHash } = req.body;
 
     const session = sessions.get(sessionId);
     if (!session) {
@@ -292,17 +292,144 @@ app.post('/api/access/grant', async (req, res) => {
     );
     programManager.setAccount(session.account);
 
+    // 1. Find the medical record to grant access to
+    console.log('[Server] Finding medical record with dataHash:', dataHash);
+    
+    // Optimized Search Strategy:
+    // 1. Get current network height
+    // 2. Search backwards in SMALL chunks to avoid 522 timeouts
+    // 3. Add retry logic for network stability
+    
+    let medicalRecord = null;
+    try {
+        const latestHeight = await networkClient.getLatestHeight();
+        const CHUNK_SIZE = 50; // Extremely conservative chunk size to avoid 522 timeouts
+        const MAX_SEARCH_DEPTH = 10000; // Search depth adapted for smaller chunks
+        
+        let currentEnd = latestHeight;
+        let currentStart = Math.max(0, currentEnd - CHUNK_SIZE);
+        let depth = 0;
+
+        console.log(`[Server] Starting search from height ${latestHeight}`);
+
+        while (!medicalRecord && depth < MAX_SEARCH_DEPTH && currentEnd > 0) {
+            console.log(`[Server] Searching blocks ${currentStart} - ${currentEnd}...`);
+            
+            let retries = 5; // Increased retries
+            while (retries > 0) {
+                try {
+                    const records = await recordProvider.findRecords({
+                        program: PROGRAM_ID,
+                        unspent: true,
+                        startHeight: currentStart,
+                        endHeight: currentEnd
+                    });
+
+                    for (const record of records) {
+                        // Handle different record formats (SDK version differences)
+                        let plaintext;
+                        if (typeof record.plaintext === 'function') {
+                            plaintext = record.plaintext();
+                        } else if (typeof record.plaintext === 'string') {
+                            plaintext = record.plaintext;
+                        } else if (typeof record === 'string') {
+                            plaintext = record;
+                        } else {
+                            plaintext = JSON.stringify(record);
+                        }
+
+                        if (plaintext.includes(`data_hash: ${dataHash}`)) {
+                            medicalRecord = record;
+                            console.log(`[Server] Found record in range ${currentStart}-${currentEnd}`);
+                            break;
+                        }
+                    }
+                    // If successful, break retry loop
+                    break;
+                } catch (err) {
+                    retries--;
+                    console.warn(`[Server] Error searching range ${currentStart}-${currentEnd}: ${err.message}. Retries left: ${retries}`);
+                    
+                    if (retries === 0) {
+                        console.error(`[Server] Failed to fetch range ${currentStart}-${currentEnd} after multiple attempts.`);
+                    } else {
+                        // Check for 522 specifically to wait longer
+                        const isTimeout = err.message && err.message.includes('522');
+                        const baseDelay = isTimeout ? 5000 : 2000;
+                        
+                        // Exponential backoff
+                        const delay = baseDelay * Math.pow(1.5, 5 - retries);
+                        console.log(`[Server] Waiting ${Math.round(delay)}ms before retry...`);
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                    }
+                }
+            }
+
+            if (medicalRecord) break;
+
+            // Move window backwards
+            currentEnd = currentStart;
+            currentStart = Math.max(0, currentEnd - CHUNK_SIZE);
+            depth += CHUNK_SIZE;
+            
+            // Small pause between chunks to be nice to the API
+            await new Promise(resolve => setTimeout(resolve, 500));
+        }
+    } catch (err) {
+        console.error('[Server] Failed to initialize search:', err);
+    }
+    
+    if (!medicalRecord) {
+        throw new Error(`Medical record not found in recent history. Please ensure the transaction is confirmed.`);
+    }
+
+    console.log('[Server] Medical record found.');
+
+    // Helper to format record as Leo input string
+    let recordInput;
+    
+    // Log available keys to help debug if we miss it again
+    console.log('[Server] MedicalRecord keys:', Object.keys(medicalRecord));
+
+    if (typeof medicalRecord === 'string') {
+        recordInput = medicalRecord;
+    } else if (typeof medicalRecord.toString === 'function' && medicalRecord.toString() !== '[object Object]') {
+        recordInput = medicalRecord.toString();
+    } else {
+        // If it's a plain object, we need to construct the record string
+        // Check if we have the plaintext available
+        const plain = 
+            (typeof medicalRecord.plaintext === 'function' ? medicalRecord.plaintext() : medicalRecord.plaintext) ||
+            medicalRecord.record_plaintext; // Handle the specific format seen in logs
+
+        if (plain) {
+            recordInput = plain;
+        } else {
+            // Last resort: try to construct it from raw fields if available, or just JSON stringify (might fail)
+            console.log('[Server] Warning: Could not extract plaintext record. Using JSON stringify.');
+            recordInput = JSON.stringify(medicalRecord);
+        }
+    }
+    
+    console.log('[Server] Record Input Type:', typeof recordInput);
+    // Log the start of the record string for debugging (don't log sensitive data in prod)
+    console.log('[Server] Record Input Preview:', recordInput.substring(0, 50) + '...');
+
     const inputs = [
-      recordId,
+      recordInput,
       doctorAddress,
-      `${accessDuration}u32`
+      `${accessDuration}u32`,
+      nonce
     ];
+
+    console.log('[Server] Executing grant_access transition...');
+    console.log('[Server] Inputs prepared (record hidden)');
 
     const txId = await programManager.execute({
       programName: PROGRAM_ID,
       functionName: 'grant_access',
       inputs,
-      fee: 500000, // Fixed fee: 0.5 credits to avoid SDK fee estimation bug
+      fee: 500000, // Fixed fee: 0.5 credits
       privateFee: false,
     });
 
@@ -320,6 +447,171 @@ app.post('/api/access/grant', async (req, res) => {
     res.status(500).json({
       success: false,
       error: error.message || 'Failed to grant access'
+    });
+  }
+});
+
+/**
+ * GET /api/records/fetch/:sessionId
+ * Fetch all medical records for the connected wallet from the blockchain
+ */
+app.get('/api/records/fetch/:sessionId', async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+    const session = sessions.get(sessionId);
+
+    if (!session) {
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid session'
+      });
+    }
+
+    console.log('[Server] Fetching records for address:', session.address);
+
+    // DEMO MODE: Return mock records
+    if (DEMO_MODE) {
+      console.log('[Server] DEMO MODE: Returning mock records');
+      
+      // In demo mode, we'll return empty array since records are stored in localStorage
+      return res.json({
+        success: true,
+        data: {
+          records: [],
+          message: 'DEMO MODE: Records are stored in localStorage'
+        }
+      });
+    }
+
+    // PRODUCTION MODE: Fetch from real blockchain
+    const networkClient = new AleoNetworkClient(ALEO_API_URL);
+    const recordProvider = new NetworkRecordProvider(session.account, networkClient);
+
+    const records = [];
+    
+    try {
+      // Search for records in chunks to avoid timeouts
+      // OPTIMIZED: Only search last 1000 blocks (~4 hours) for faster response
+      const latestHeight = await networkClient.getLatestHeight();
+      const CHUNK_SIZE = 100; // Larger chunks for faster searching
+      const MAX_SEARCH_DEPTH = 1000; // Only search recent blocks (much faster!)
+      const MAX_SEARCH_TIME = 15000; // Max 15 seconds total search time
+      
+      let currentEnd = latestHeight;
+      let currentStart = Math.max(0, currentEnd - CHUNK_SIZE);
+      let depth = 0;
+      const searchStartTime = Date.now();
+
+      console.log(`[Server] Searching for records from height ${latestHeight} (max depth: ${MAX_SEARCH_DEPTH} blocks, max time: ${MAX_SEARCH_TIME}ms)`);
+
+      while (depth < MAX_SEARCH_DEPTH && currentEnd > 0 && (Date.now() - searchStartTime) < MAX_SEARCH_TIME) {
+        console.log(`[Server] Searching blocks ${currentStart} - ${currentEnd}...`);
+        
+        let retries = 3;
+        while (retries > 0) {
+          try {
+            const foundRecords = await recordProvider.findRecords({
+              program: PROGRAM_ID,
+              unspent: true,
+              startHeight: currentStart,
+              endHeight: currentEnd
+            });
+
+            for (const record of foundRecords) {
+              // Extract plaintext from record
+              let plaintext;
+              if (typeof record.plaintext === 'function') {
+                plaintext = record.plaintext();
+              } else if (typeof record.plaintext === 'string') {
+                plaintext = record.plaintext;
+              } else if (typeof record === 'string') {
+                plaintext = record;
+              } else {
+                plaintext = JSON.stringify(record);
+              }
+
+              // Parse record data
+              // Record format: {owner: aleo1xxx, record_id: 123field, data_hash: 456field, ...}
+              const recordData = {
+                id: '',
+                recordId: '',
+                title: 'Medical Record',
+                description: 'Record fetched from blockchain',
+                recordType: 1,
+                data: plaintext,
+                dataHash: '',
+                createdAt: new Date(),
+                updatedAt: new Date(),
+                isEncrypted: true,
+                ownerAddress: session.address
+              };
+
+              // Try to extract record_id from plaintext
+              const recordIdMatch = plaintext.match(/record_id:\s*(\d+field)/);
+              if (recordIdMatch) {
+                recordData.recordId = recordIdMatch[1];
+                recordData.id = recordIdMatch[1];
+              }
+
+              // Try to extract data_hash
+              const dataHashMatch = plaintext.match(/data_hash:\s*(\d+field)/);
+              if (dataHashMatch) {
+                recordData.dataHash = dataHashMatch[1];
+              }
+
+              // Try to extract record_type
+              const recordTypeMatch = plaintext.match(/record_type:\s*(\d+)u8/);
+              if (recordTypeMatch) {
+                recordData.recordType = parseInt(recordTypeMatch[1]);
+              }
+
+              records.push(recordData);
+              console.log(`[Server] Found record: ${recordData.recordId}`);
+            }
+            
+            break; // Success, exit retry loop
+          } catch (err) {
+            retries--;
+            console.warn(`[Server] Error searching range: ${err.message}. Retries left: ${retries}`);
+            if (retries > 0) {
+              await new Promise(resolve => setTimeout(resolve, 2000));
+            }
+          }
+        }
+
+        // Move window backwards
+        currentEnd = currentStart;
+        currentStart = Math.max(0, currentEnd - CHUNK_SIZE);
+        depth += CHUNK_SIZE;
+        
+        // Pause between chunks
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+
+      console.log(`[Server] Found ${records.length} records total`);
+
+      res.json({
+        success: true,
+        data: {
+          records: records,
+          count: records.length
+        }
+      });
+    } catch (err) {
+      console.error('[Server] Error fetching records:', err);
+      res.json({
+        success: true,
+        data: {
+          records: [],
+          error: err.message
+        }
+      });
+    }
+  } catch (error) {
+    console.error('[Server] Fetch records error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to fetch records'
     });
   }
 });
@@ -354,6 +646,7 @@ app.listen(PORT, () => {
   console.log('  POST   /api/wallet/generate');
   console.log('  GET    /api/wallet/balance/:sessionId');
   console.log('  POST   /api/records/create');
+  console.log('  GET    /api/records/fetch/:sessionId');
   console.log('  POST   /api/access/grant');
   console.log('  GET    /api/health');
   console.log('');

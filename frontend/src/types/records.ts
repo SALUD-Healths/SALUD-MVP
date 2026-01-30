@@ -99,6 +99,7 @@ export interface MedicalRecord {
   createdAt: Date;
   updatedAt: Date;
   isEncrypted: boolean;
+  ownerAddress: string; // Wallet address that created this record
 }
 
 /**

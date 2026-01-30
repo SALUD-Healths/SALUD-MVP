@@ -9,25 +9,29 @@ import {
   Clock,
   ArrowRight,
   Activity,
+  Wallet,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { PageHeader, EmptyState } from '@/components/layout';
-import { RecordCard, CreateRecordModal, ShareRecordModal } from '@/components/records';
+import { RecordCard, CreateRecordModal, ShareRecordModal, RecordActionsModal } from '@/components/records';
 import { useRecordsStore, useUserStore } from '@/store';
 import type { MedicalRecord } from '@/types/records';
 
 export function DashboardPage() {
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [actionsModalOpen, setActionsModalOpen] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<MedicalRecord | null>(null);
 
   const records = useRecordsStore((state) => state.records);
   const accessGrants = useRecordsStore((state) => state.accessGrants);
+  const isFetchingFromChain = useRecordsStore((state) => state.isFetchingFromChain);
   const user = useUserStore((state) => state.user);
   
   // Compute active grants with useMemo to avoid infinite loops
+  // IMPORTANT: All hooks must be called before any conditional returns
   const activeGrants = useMemo(() => {
     const now = new Date();
     return accessGrants.filter(
@@ -35,18 +39,59 @@ export function DashboardPage() {
     );
   }, [accessGrants]);
 
-  const recentRecords = records.slice(0, 4);
+  // Filter records to only show those owned by the current user
+  const userRecords = useMemo(() => {
+    if (!user?.address) return [];
+    return records.filter((record) => record.ownerAddress === user.address);
+  }, [records, user?.address]);
+
+  const recentRecords = userRecords.slice(0, 4);
 
   const handleShare = (record: MedicalRecord) => {
     setSelectedRecord(record);
     setShareModalOpen(true);
   };
 
+  const handleView = (record: MedicalRecord) => {
+    setSelectedRecord(record);
+    setActionsModalOpen(true);
+  };
+
+  const handleEdit = (record: MedicalRecord) => {
+    // TODO: Implement edit functionality
+    console.log('Edit record:', record);
+    alert('Edit functionality coming soon!');
+  };
+
+  const handleDelete = (record: MedicalRecord) => {
+    // Delete from local store
+    const { deleteRecord } = useRecordsStore.getState();
+    deleteRecord(record.id);
+    console.log('Deleted record:', record.id);
+  };
+
+  // If not connected, show connect wallet state
+  if (!user?.isConnected) {
+    return (
+      <div className="space-y-8">
+        <PageHeader
+          title="Welcome to Salud"
+          description="Secure, private health records on the Aleo blockchain"
+        />
+        <EmptyState
+          icon={<Wallet size={48} className="text-slate-300" />}
+          title="Wallet Not Connected"
+          description="Please connect your Aleo wallet to access your dashboard and manage your records."
+        />
+      </div>
+    );
+  }
+
   // Stats
   const stats = [
     {
       label: 'Total Records',
-      value: records.length,
+      value: userRecords.length,
       icon: <FileText size={20} />,
       color: 'primary',
       change: '+2 this month',
@@ -162,10 +207,21 @@ export function DashboardPage() {
       <div>
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-semibold text-slate-900">Recent Records</h2>
-          <Button variant="ghost" size="sm" className="text-primary-600">
-            View All
-            <ArrowRight size={16} />
-          </Button>
+          <div className="flex items-center gap-3">
+            {isFetchingFromChain && (
+              <div className="flex items-center gap-2 text-sm text-primary-600">
+                <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span className="animate-pulse">Syncing...</span>
+              </div>
+            )}
+            <Button variant="ghost" size="sm" className="text-primary-600">
+              View All
+              <ArrowRight size={16} />
+            </Button>
+          </div>
         </div>
 
         {recentRecords.length > 0 ? (
@@ -175,21 +231,28 @@ export function DashboardPage() {
                 key={record.id}
                 record={record}
                 index={index}
+                onView={handleView}
                 onShare={handleShare}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
               />
             ))}
           </div>
         ) : (
           <EmptyState
             icon={<FileText size={32} />}
-            title="No records yet"
-            description="Start by creating your first encrypted medical record"
-            action={
+            title={isFetchingFromChain ? "Syncing with blockchain..." : "No records yet"}
+            description={isFetchingFromChain 
+              ? "We're checking the Aleo blockchain for your medical records. This may take a few moments..." 
+              : "Start by creating your first encrypted medical record"
+            }
+            action={!isFetchingFromChain ? (
               <Button onClick={() => setCreateModalOpen(true)}>
                 <Plus size={16} />
                 Create Record
               </Button>
-            }
+            ) : undefined}
+            isLoading={isFetchingFromChain}
           />
         )}
       </div>
@@ -226,6 +289,19 @@ export function DashboardPage() {
         open={shareModalOpen}
         onOpenChange={setShareModalOpen}
         record={selectedRecord}
+      />
+
+      <RecordActionsModal
+        open={actionsModalOpen}
+        onOpenChange={setActionsModalOpen}
+        record={selectedRecord}
+        onView={(record) => {
+          console.log('View record:', record);
+          alert('View functionality coming soon!');
+        }}
+        onShare={handleShare}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
       />
     </div>
   );

@@ -6,13 +6,14 @@ import {
   Grid3X3,
   List,
   FileText,
+  Wallet,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { PageHeader, EmptyState } from '@/components/layout';
 import { RecordCard, RecordListItem, CreateRecordModal, ShareRecordModal } from '@/components/records';
-import { useRecordsStore } from '@/store';
+import { useRecordsStore, useUserStore } from '@/store';
 import { RECORD_TYPES, type MedicalRecord, type RecordType } from '@/types/records';
 import { cn } from '@/lib/utils';
 
@@ -26,7 +27,25 @@ export function RecordsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedType, setSelectedType] = useState<RecordType | 'all'>('all');
 
+  const { user } = useUserStore();
   const records = useRecordsStore((state) => state.records);
+
+  // If not connected, show connect wallet state
+  if (!user?.isConnected) {
+    return (
+      <div className="space-y-6">
+        <PageHeader
+          title="My Records"
+          description="Connect your wallet to view your medical records"
+        />
+        <EmptyState
+          icon={<Wallet size={48} className="text-slate-300" />}
+          title="Wallet Not Connected"
+          description="Please connect your Aleo wallet to access your encrypted medical records securely."
+        />
+      </div>
+    );
+  }
 
   // Filter records
   const filteredRecords = records.filter((record) => {

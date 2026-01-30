@@ -139,7 +139,7 @@ export function ShareRecordModal({ open, onOpenChange, record }: ShareRecordModa
     // In production, you might want to handle this differently
     const targetDoctor = doctorAddress || 'aleo1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq3ljyzc';
 
-    const result = await grantAccess(aleoRecord.record_id, targetDoctor, durationBlocks);
+    const result = await grantAccess(aleoRecord.record_id, targetDoctor, durationBlocks, aleoRecord.data_hash);
 
     if (result) {
       // Generate a placeholder access token

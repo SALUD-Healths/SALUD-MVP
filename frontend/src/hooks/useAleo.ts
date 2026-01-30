@@ -48,7 +48,7 @@ export function useAleo() {
   const [transaction, setTransaction] = useState<TransactionState>(initialTransactionState);
 
   const { connect: connectUser, disconnect: disconnectUser, setBalance } = useUserStore();
-  const { addRecord, createAccessGrant, setLoading, setError } = useRecordsStore();
+  const { addRecord, createAccessGrant, setLoading, setError, setFetchingFromChain } = useRecordsStore();
 
   // Get wallet adapter state (not used for transactions)
   const { connected: walletConnected, publicKey: walletPublicKey } = useWallet();
@@ -84,6 +84,49 @@ export function useAleo() {
         setBalance(balanceResult.data.balance);
       }
 
+      // Fetch records from blockchain (non-blocking - runs in background)
+      // This allows the user to start using the app immediately
+      setTimeout(async () => {
+        try {
+          setFetchingFromChain(true);
+          console.log('[Frontend] Fetching records from blockchain (background)...');
+          const recordsResult = await api.fetchRecords(newSessionId);
+          if (recordsResult.success && recordsResult.data) {
+            const { records: fetchedRecords } = recordsResult.data;
+            
+            // Add fetched records to store (avoid duplicates)
+            fetchedRecords.forEach((record) => {
+              // Check if record already exists in store
+              const existingRecord = useRecordsStore.getState().records.find(
+                (r) => r.recordId === record.recordId
+              );
+              
+              if (!existingRecord) {
+                // Add record to store (createdAt/updatedAt will be set by addRecord)
+                addRecord({
+                  recordId: record.recordId,
+                  title: record.title,
+                  description: record.description,
+                  recordType: record.recordType as RecordType,
+                  data: record.data,
+                  dataHash: record.dataHash,
+                  isEncrypted: record.isEncrypted,
+                  ownerAddress: record.ownerAddress,
+                });
+                console.log('[Frontend] Added record from chain:', record.recordId);
+              }
+            });
+            
+            console.log('[Frontend] Fetched', fetchedRecords.length, 'records from blockchain');
+          }
+        } catch (fetchError) {
+          console.warn('[Frontend] Background record fetch failed:', fetchError);
+          // Don't throw - this is background fetch, user can still use the app
+        } finally {
+          setFetchingFromChain(false);
+        }
+      }, 100); // Small delay to let UI update first
+
       console.log('[Frontend] Connected successfully:', address);
       return true;
     } catch (error) {
@@ -105,6 +148,7 @@ export function useAleo() {
     setPrivateKeyState(null);
     setAccount(null);
     disconnectUser();
+    // Note: We don't clear records here anymore - they persist per wallet address
   }, [disconnectUser]);
 
   /**
@@ -223,7 +267,8 @@ export function useAleo() {
         }
 
         console.log('[useAleo] Adding record to local store...');
-        // Add to local store
+        // Add to local store with owner address
+        const userStore = useUserStore.getState();
         addRecord({
           recordId: result.data.recordId,
           title,
@@ -232,6 +277,7 @@ export function useAleo() {
           data: JSON.stringify(encryptedData),
           dataHash,
           isEncrypted: true,
+          ownerAddress: userStore.user?.address || account?.address || '',
         });
 
         console.log('[useAleo] Record created successfully!');
@@ -270,7 +316,8 @@ export function useAleo() {
     async (
       recordId: string,
       doctorAddress: string,
-      durationBlocks: number
+      durationBlocks: number,
+      dataHash: string
     ): Promise<boolean> => {
       // Check both state and sessionStorage
       const currentSessionId = sessionId || sessionStorage.getItem(SESSION_STORAGE_KEY);
@@ -290,10 +337,13 @@ export function useAleo() {
       setLoading(true);
 
       try {
+        const nonce = generateFieldNonce();
         const result = await api.grantAccess(currentSessionId, {
           recordId,
           doctorAddress,
           accessDuration: durationBlocks,
+          nonce,
+          dataHash,
         });
 
         if (!result.success || !result.data) {

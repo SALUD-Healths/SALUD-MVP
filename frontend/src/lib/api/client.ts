@@ -38,6 +38,24 @@ export interface GrantAccessResponse {
   grantId: string;
 }
 
+export interface FetchRecordsResponse {
+  records: Array<{
+    id: string;
+    recordId: string;
+    title: string;
+    description: string;
+    recordType: number;
+    data: string;
+    dataHash: string;
+    createdAt: string;
+    updatedAt: string;
+    isEncrypted: boolean;
+    ownerAddress: string;
+  }>;
+  count?: number;
+  message?: string;
+}
+
 /**
  * Connect wallet with private key
  */
@@ -133,6 +151,8 @@ export async function grantAccess(
     recordId: string;
     doctorAddress: string;
     accessDuration: number;
+    nonce: string;
+    dataHash: string;
   }
 ): Promise<ApiResponse<GrantAccessResponse>> {
   try {
@@ -147,6 +167,21 @@ export async function grantAccess(
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to grant access'
+    };
+  }
+}
+
+/**
+ * Fetch all medical records for the connected wallet from the blockchain
+ */
+export async function fetchRecords(sessionId: string): Promise<ApiResponse<FetchRecordsResponse>> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/records/fetch/${sessionId}`);
+    return await response.json();
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to fetch records'
     };
   }
 }

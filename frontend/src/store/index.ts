@@ -5,74 +5,11 @@ import type { MedicalRecord, AccessGrant, User, RecordType } from '@/types/recor
 // Generate unique IDs
 const generateId = () => Math.random().toString(36).substring(2, 15);
 
-// Mock data for development
-const mockRecords: MedicalRecord[] = [
-  {
-    id: generateId(),
-    recordId: '123456789field',
-    title: 'Annual Physical Examination',
-    description: 'Complete health checkup including blood work, vitals, and general assessment.',
-    recordType: 1,
-    data: 'encrypted_data_placeholder',
-    dataHash: 'hash_placeholder',
-    createdAt: new Date('2024-01-15'),
-    updatedAt: new Date('2024-01-15'),
-    isEncrypted: true,
-  },
-  {
-    id: generateId(),
-    recordId: '987654321field',
-    title: 'Blood Test Results',
-    description: 'Complete blood count (CBC), metabolic panel, and lipid profile.',
-    recordType: 2,
-    data: 'encrypted_data_placeholder',
-    dataHash: 'hash_placeholder',
-    createdAt: new Date('2024-01-20'),
-    updatedAt: new Date('2024-01-20'),
-    isEncrypted: true,
-  },
-  {
-    id: generateId(),
-    recordId: '456789123field',
-    title: 'Prescription - Metformin',
-    description: 'Diabetes management medication, 500mg twice daily.',
-    recordType: 3,
-    data: 'encrypted_data_placeholder',
-    dataHash: 'hash_placeholder',
-    createdAt: new Date('2024-02-01'),
-    updatedAt: new Date('2024-02-01'),
-    isEncrypted: true,
-  },
-  {
-    id: generateId(),
-    recordId: '789123456field',
-    title: 'Chest X-Ray',
-    description: 'Routine chest X-ray imaging for respiratory assessment.',
-    recordType: 4,
-    data: 'encrypted_data_placeholder',
-    dataHash: 'hash_placeholder',
-    createdAt: new Date('2024-02-10'),
-    updatedAt: new Date('2024-02-10'),
-    isEncrypted: true,
-  },
-  {
-    id: generateId(),
-    recordId: '321654987field',
-    title: 'COVID-19 Vaccination',
-    description: 'Pfizer-BioNTech COVID-19 vaccine, booster dose.',
-    recordType: 5,
-    data: 'encrypted_data_placeholder',
-    dataHash: 'hash_placeholder',
-    createdAt: new Date('2024-02-15'),
-    updatedAt: new Date('2024-02-15'),
-    isEncrypted: true,
-  },
-];
-
 interface RecordsState {
   records: MedicalRecord[];
   accessGrants: AccessGrant[];
   isLoading: boolean;
+  isFetchingFromChain: boolean;
   error: string | null;
   
   // Actions
@@ -81,6 +18,7 @@ interface RecordsState {
   deleteRecord: (id: string) => void;
   getRecordById: (id: string) => MedicalRecord | undefined;
   getRecordsByType: (type: RecordType) => MedicalRecord[];
+  getRecordsByOwner: (ownerAddress: string) => MedicalRecord[];
   
   // Access grants
   createAccessGrant: (grant: Omit<AccessGrant, 'id' | 'isExpired'>) => AccessGrant;
@@ -90,16 +28,19 @@ interface RecordsState {
   
   // State management
   setLoading: (loading: boolean) => void;
+  setFetchingFromChain: (fetching: boolean) => void;
   setError: (error: string | null) => void;
   clearError: () => void;
+  clearRecords: () => void;
 }
 
 export const useRecordsStore = create<RecordsState>()(
   persist(
     (set, get) => ({
-      records: mockRecords,
+      records: [],
       accessGrants: [],
       isLoading: false,
+      isFetchingFromChain: false,
       error: null,
 
       addRecord: (record) => {
@@ -109,18 +50,22 @@ export const useRecordsStore = create<RecordsState>()(
           createdAt: new Date(),
           updatedAt: new Date(),
         };
+        
         set((state) => ({
           records: [newRecord, ...state.records],
         }));
+        
         return newRecord;
+      },
+
+      getRecordsByOwner: (ownerAddress: string) => {
+        return get().records.filter((record) => record.ownerAddress === ownerAddress);
       },
 
       updateRecord: (id, updates) => {
         set((state) => ({
           records: state.records.map((record) =>
-            record.id === id
-              ? { ...record, ...updates, updatedAt: new Date() }
-              : record
+            record.id === id ? { ...record, ...updates, updatedAt: new Date() } : record
           ),
         }));
       },
@@ -138,50 +83,47 @@ export const useRecordsStore = create<RecordsState>()(
       getRecordsByType: (type) => {
         return get().records.filter((record) => record.recordType === type);
       },
-
+      
       createAccessGrant: (grant) => {
         const newGrant: AccessGrant = {
           ...grant,
           id: generateId(),
           isExpired: false,
         };
+        
         set((state) => ({
           accessGrants: [newGrant, ...state.accessGrants],
         }));
+        
         return newGrant;
       },
-
+      
       revokeAccessGrant: (accessToken) => {
         set((state) => ({
           accessGrants: state.accessGrants.map((grant) =>
-            grant.accessToken === accessToken
-              ? { ...grant, isRevoked: true }
-              : grant
+            grant.accessToken === accessToken ? { ...grant, isRevoked: true } : grant
           ),
         }));
       },
-
+      
       getActiveGrants: () => {
-        const now = new Date();
         return get().accessGrants.filter(
-          (grant) => !grant.isRevoked && grant.expiresAt > now
+          (grant) => !grant.isRevoked && !grant.isExpired
         );
       },
-
+      
       getGrantsByRecordId: (recordId) => {
         return get().accessGrants.filter((grant) => grant.recordId === recordId);
       },
 
-      setLoading: (loading) => set({ isLoading: loading }),
+      setLoading: (isLoading) => set({ isLoading }),
+      setFetchingFromChain: (isFetchingFromChain) => set({ isFetchingFromChain }),
       setError: (error) => set({ error }),
       clearError: () => set({ error: null }),
+      clearRecords: () => set({ records: [], accessGrants: [] }),
     }),
     {
       name: 'salud-records-storage',
-      partialize: (state) => ({
-        records: state.records,
-        accessGrants: state.accessGrants,
-      }),
     }
   )
 );
@@ -201,11 +143,7 @@ interface UserState {
 export const useUserStore = create<UserState>()(
   persist(
     (set) => ({
-      user: {
-        address: 'aleo1gl4a57rcxyjvmzcgjscjqe466ecdr7uk4gdp7sf5pctu6tjvv5qs60lw8y',
-        isConnected: true,
-        balance: 40,
-      },
+      user: null,
       isConnecting: false,
 
       connect: (address, viewKey, name) => {
