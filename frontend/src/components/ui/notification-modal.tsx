@@ -3,7 +3,7 @@ import {
   DialogContent,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { CheckCircle2, XCircle } from 'lucide-react';
+import { CheckCircle2, XCircle, ExternalLink } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface NotificationModalProps {
@@ -12,6 +12,8 @@ interface NotificationModalProps {
   type: 'success' | 'error';
   title: string;
   message: string;
+  transactionHash?: string;
+  network?: 'testnet' | 'mainnet';
 }
 
 export function NotificationModal({
@@ -20,8 +22,14 @@ export function NotificationModal({
   type,
   title,
   message,
+  transactionHash,
+  network = 'testnet',
 }: NotificationModalProps) {
   const isSuccess = type === 'success';
+  
+  const explorerUrl = transactionHash 
+    ? `https://${network === 'testnet' ? 'testnet.' : ''}explorer.provable.com/transaction/${transactionHash}`
+    : null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -55,6 +63,21 @@ export function NotificationModal({
           <p className="text-slate-600 text-base max-w-sm">
             {message}
           </p>
+
+          {/* Transaction Hash Link */}
+          {isSuccess && transactionHash && explorerUrl && (
+            <a
+              href={explorerUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 text-sm text-primary-600 hover:text-primary-700 underline"
+            >
+              <span className="font-mono truncate max-w-[200px]">
+                {transactionHash.slice(0, 12)}...{transactionHash.slice(-8)}
+              </span>
+              <ExternalLink size={14} />
+            </a>
+          )}
 
           {/* Button */}
           <Button

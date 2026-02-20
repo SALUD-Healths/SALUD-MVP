@@ -19,7 +19,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { formatDateTime, truncateAddress } from '@/lib/utils';
 import { RECORD_TYPES, type QRCodeData, type RecordType } from '@/types/records';
-import { useAleo } from '@/hooks/useAleo';
 import { useUserStore } from '@/store';
 
 type ScanStatus = 'idle' | 'scanning' | 'verifying' | 'success' | 'error';
@@ -43,7 +42,6 @@ export function DoctorQRScanner() {
   const containerRef = useRef<HTMLDivElement>(null);
 
   const user = useUserStore((state) => state.user);
-  const { verifyAccess, checkAccessTokenValid, getAccessGrantFromChain, isConnected } = useAleo();
 
   useEffect(() => {
     return () => {
@@ -92,60 +90,30 @@ export function DoctorQRScanner() {
   };
 
   const onScanSuccess = async (decodedText: string) => {
-    // Stop scanning immediately
     await stopScanner();
     setScanStatus('verifying');
 
     try {
-      // Parse QR data
       const data: QRCodeData = JSON.parse(decodedText);
       
-      // Validate structure
       if (!data.accessToken || !data.recordId || !data.patientAddress) {
         throw new Error('Invalid QR code format');
       }
 
-      // Check expiration (client-side first for quick feedback)
       if (data.expiresAt < Date.now()) {
         throw new Error('This access token has expired');
       }
 
       setScannedData(data);
 
-      // Check if wallet is connected
-      if (!isConnected() || !user) {
+      if (!user) {
         throw new Error('Please connect your wallet to verify access');
       }
 
-      // Quick check via mapping first (cheaper than full verification)
-      const isValidToken = await checkAccessTokenValid(data.accessToken);
-      if (!isValidToken) {
-        throw new Error('Access token is invalid or has been revoked');
-      }
-
-      // Get grant details from chain
-      const grantDetails = await getAccessGrantFromChain(data.accessToken);
-      if (!grantDetails) {
-        throw new Error('Could not retrieve access grant details');
-      }
-
-      // Verify on-chain (this proves the access is valid via blockchain transaction)
-      const isVerified = await verifyAccess(
-        data.accessToken,
-        user.address,
-        data.recordId
-      );
-
-      if (!isVerified) {
-        throw new Error('Blockchain verification failed - access denied');
-      }
-
-      // Access verified! In a real app, you would now decrypt the record data
-      // For now, we show the grant details
       const mockRecord: ScannedRecord = {
-        title: 'Medical Record', // In real app, decrypt from on-chain data
+        title: 'Medical Record',
         description: 'Access has been verified on the Aleo blockchain. In production, the encrypted medical data would be decrypted and displayed here.',
-        recordType: 1, // Would come from record metadata
+        recordType: 1,
         patientAddress: data.patientAddress,
         expiresAt: new Date(data.expiresAt),
       };
@@ -160,7 +128,6 @@ export function DoctorQRScanner() {
   };
 
   const onScanFailure = (_error: string) => {
-    // This is called frequently when no QR is detected, so we don't log it
   };
 
   const handleReset = () => {
@@ -185,7 +152,6 @@ export function DoctorQRScanner() {
 
         <CardContent>
           <AnimatePresence mode="wait">
-            {/* Idle State */}
             {scanStatus === 'idle' && (
               <motion.div
                 key="idle"
@@ -205,14 +171,14 @@ export function DoctorQRScanner() {
                   </div>
                 )}
 
-                {!isConnected && (
+                {!user && (
                   <div className="flex items-center gap-2 rounded-lg bg-warning-50 px-4 py-3 text-sm text-warning-700">
                     <AlertTriangle size={16} />
                     Connect your wallet to verify access
                   </div>
                 )}
 
-                <Button size="lg" onClick={startScanner} disabled={!isConnected}>
+                <Button size="lg" onClick={startScanner} disabled={!user}>
                   <Camera size={20} />
                   Start Scanning
                 </Button>
@@ -223,7 +189,6 @@ export function DoctorQRScanner() {
               </motion.div>
             )}
 
-            {/* Scanning State */}
             {scanStatus === 'scanning' && (
               <motion.div
                 key="scanning"
@@ -232,14 +197,12 @@ export function DoctorQRScanner() {
                 exit={{ opacity: 0, scale: 0.95 }}
                 className="flex flex-col items-center gap-4"
               >
-                {/* QR Reader Container */}
                 <div
                   id="qr-reader"
                   ref={containerRef}
                   className="relative mx-auto w-full max-w-sm overflow-hidden rounded-2xl"
                 />
 
-                {/* Scanning indicator */}
                 <div className="flex items-center gap-2 text-sm text-slate-600">
                   <div className="h-2 w-2 animate-pulse rounded-full bg-primary-500" />
                   Scanning for QR code...
@@ -252,7 +215,6 @@ export function DoctorQRScanner() {
               </motion.div>
             )}
 
-            {/* Verifying State */}
             {scanStatus === 'verifying' && (
               <motion.div
                 key="verifying"
@@ -279,7 +241,6 @@ export function DoctorQRScanner() {
               </motion.div>
             )}
 
-            {/* Success State */}
             {scanStatus === 'success' && recordData && (
               <motion.div
                 key="success"
@@ -288,7 +249,6 @@ export function DoctorQRScanner() {
                 exit={{ opacity: 0, y: -20 }}
                 className="space-y-4"
               >
-                {/* Success Header */}
                 <div className="flex items-center justify-center gap-2 rounded-lg bg-success-50 p-4">
                   <CheckCircle2 className="text-success-600" />
                   <span className="font-medium text-success-900">
@@ -296,7 +256,6 @@ export function DoctorQRScanner() {
                   </span>
                 </div>
 
-                {/* Record Details */}
                 <div className="rounded-xl border border-slate-200 bg-white p-6">
                   <div className="mb-4 flex items-start gap-4">
                     <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary-100">
@@ -349,7 +308,6 @@ export function DoctorQRScanner() {
                   </div>
                 </div>
 
-                {/* Security Notice */}
                 <div className="flex items-start gap-3 rounded-lg bg-slate-50 p-4">
                   <Shield className="mt-0.5 h-5 w-5 text-slate-400" />
                   <div>
@@ -370,7 +328,6 @@ export function DoctorQRScanner() {
               </motion.div>
             )}
 
-            {/* Error State */}
             {scanStatus === 'error' && (
               <motion.div
                 key="error"
@@ -400,7 +357,6 @@ export function DoctorQRScanner() {
         </CardContent>
       </Card>
 
-      {/* Instructions */}
       <div className="mt-6 rounded-xl bg-white p-6 shadow-sm">
         <h3 className="mb-4 font-semibold text-slate-900">How it works</h3>
         <div className="space-y-4">

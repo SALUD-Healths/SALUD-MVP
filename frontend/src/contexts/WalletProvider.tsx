@@ -1,21 +1,20 @@
 /**
  * Aleo Wallet Provider
  * 
- * Wraps the app with Aleo wallet adapter for Leo Wallet integration.
+ * Wraps the app with Aleo wallet adapter for Shield Wallet integration.
  */
 
 import { useMemo } from 'react';
 import type { FC, ReactNode } from 'react';
-import { 
-  WalletProvider as AleoWalletProvider,
-} from '@demox-labs/aleo-wallet-adapter-react';
-import { LeoWalletAdapter } from '@demox-labs/aleo-wallet-adapter-leo';
-import {
-  DecryptPermission,
-  WalletAdapterNetwork,
-} from '@demox-labs/aleo-wallet-adapter-base';
+import { AleoWalletProvider } from '@provablehq/aleo-wallet-adaptor-react';
+import { WalletModalProvider } from '@provablehq/aleo-wallet-adaptor-react-ui';
+import { ShieldWalletAdapter } from '@provablehq/aleo-wallet-adaptor-shield';
+import { Network } from '@provablehq/aleo-types';
+import { WalletDecryptPermission } from '@provablehq/aleo-wallet-standard';
 
-// Import our custom override styles
+// Import wallet adapter UI styles FIRST
+import '@provablehq/aleo-wallet-adaptor-react-ui/dist/styles.css';
+// Import our custom override styles AFTER
 import '../styles/wallet-adapter-override.css';
 
 interface WalletProviderProps {
@@ -25,21 +24,32 @@ interface WalletProviderProps {
 export const WalletProvider: FC<WalletProviderProps> = ({ children }) => {
   const wallets = useMemo(
     () => [
-      new LeoWalletAdapter({
-        appName: 'Salud Health Records',
-      }),
+      new ShieldWalletAdapter(),
     ],
     []
   );
 
+  // Programs that this app interacts with - CRITICAL for Shield wallet to work!
+  // Must list all programs that will be used for transactions
+  const programs = useMemo(() => [
+    'credits.aleo',
+    'salud_health_records_v2.aleo',
+  ], []);
+
   return (
     <AleoWalletProvider
       wallets={wallets}
-      decryptPermission={DecryptPermission.UponRequest}
-      network={WalletAdapterNetwork.TestnetBeta}
+      network={Network.TESTNET}
       autoConnect={false}
+      decryptPermission={WalletDecryptPermission.UponRequest}
+      programs={programs}
+      onError={(error) => {
+        console.error('[WalletProvider] Wallet error:', error);
+      }}
     >
-      {children}
+      <WalletModalProvider>
+        {children}
+      </WalletModalProvider>
     </AleoWalletProvider>
   );
 };

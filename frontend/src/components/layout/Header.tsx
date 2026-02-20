@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Bell, Search, Wallet, ChevronDown, Copy, ExternalLink, CheckCircle2, TestTube2 } from 'lucide-react';
+import { Bell, Search, Wallet, ChevronDown, Copy, ExternalLink, CheckCircle2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,7 +12,6 @@ import {
   TooltipProvider,
 } from '@/components/ui/tooltip';
 import { cn, truncateAddress, copyToClipboard } from '@/lib/utils';
-import { DEMO_MODE } from '@/lib/aleo/config';
 
 interface HeaderProps {
   title?: string;
@@ -60,29 +59,6 @@ export function Header({
 
         {/* Right Section - Actions */}
         <div className="flex items-center gap-3">
-          {/* Demo Mode Indicator */}
-          {DEMO_MODE && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Badge 
-                  variant="warning" 
-                  size="sm"
-                  className="flex items-center gap-1 cursor-help"
-                >
-                  <TestTube2 size={12} />
-                  Demo Mode
-                </Badge>
-              </TooltipTrigger>
-              <TooltipContent className="max-w-xs">
-                <p className="font-medium">Demo Mode Active</p>
-                <p className="text-xs text-slate-400 mt-1">
-                  Transactions are simulated locally. No real blockchain interaction.
-                </p>
-              </TooltipContent>
-            </Tooltip>
-          )}
-
-          {/* Search */}
           <AnimatePresence>
             {showSearch && (
               <motion.div

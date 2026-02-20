@@ -11,8 +11,6 @@ import {
   AlertTriangle,
   Download,
   RefreshCw,
-  Loader2,
-  CheckCircle2,
   XCircle,
 } from 'lucide-react';
 import {
@@ -32,11 +30,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { copyToClipboard, blocksToTime, truncateAddress, cn } from '@/lib/utils';
+import { copyToClipboard, blocksToTime, truncateAddress } from '@/lib/utils';
 import { DURATION_OPTIONS, RECORD_TYPES, type MedicalRecord, type QRCodeData, type RecordType } from '@/types/records';
 import { useUserStore } from '@/store';
-import { useAleo } from '@/hooks/useAleo';
-import type { AleoMedicalRecord } from '@/lib/aleo/types';
 
 interface ShareRecordModalProps {
   open: boolean;
@@ -47,7 +43,7 @@ interface ShareRecordModalProps {
 export function ShareRecordModal({ open, onOpenChange, record }: ShareRecordModalProps) {
   const [step, setStep] = useState<'configure' | 'share'>('configure');
   const [doctorAddress, setDoctorAddress] = useState('');
-  const [durationBlocks, setDurationBlocks] = useState(5760); // 24 hours default
+  const [durationBlocks, setDurationBlocks] = useState(5760);
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [expiresAt, setExpiresAt] = useState<Date | null>(null);
   const [copied, setCopied] = useState(false);
@@ -55,9 +51,7 @@ export function ShareRecordModal({ open, onOpenChange, record }: ShareRecordModa
   const [addressError, setAddressError] = useState<string | null>(null);
 
   const user = useUserStore((state) => state.user);
-  const { grantAccess, transaction, clearTransaction, isConnected } = useAleo();
 
-  // Reset state when modal closes
   useEffect(() => {
     if (!open) {
       setStep('configure');
@@ -67,11 +61,9 @@ export function ShareRecordModal({ open, onOpenChange, record }: ShareRecordModa
       setExpiresAt(null);
       setCopied(false);
       setAddressError(null);
-      clearTransaction();
     }
-  }, [open, clearTransaction]);
+  }, [open]);
 
-  // Countdown timer
   useEffect(() => {
     if (!expiresAt) return;
 
@@ -106,50 +98,12 @@ export function ShareRecordModal({ open, onOpenChange, record }: ShareRecordModa
   const handleGenerate = async () => {
     if (!record || !user) return;
 
-    // Validate doctor address if provided
     if (doctorAddress && !doctorAddress.startsWith('aleo1')) {
       setAddressError('Invalid Aleo address format');
       return;
     }
 
-    if (!isConnected()) {
-      setAddressError('Please connect your wallet first');
-      return;
-    }
-
     setAddressError(null);
-
-    // For the grant_access transition, we need to construct the AleoMedicalRecord
-    // In a real app, this would come from the encrypted record stored locally
-    const aleoRecord: AleoMedicalRecord = {
-      owner: user.address,
-      record_id: record.recordId,
-      data_hash: record.dataHash,
-      data_part1: '0field', // These would come from the actual encrypted data
-      data_part2: '0field',
-      data_part3: '0field',
-      data_part4: '0field',
-      record_type: record.recordType,
-      created_at: 0,
-      version: 1,
-      _nonce: '0field',
-    };
-
-    // Use a placeholder address if none provided (for "any doctor" access)
-    // In production, you might want to handle this differently
-    const targetDoctor = doctorAddress || 'aleo1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq3ljyzc';
-
-    const result = await grantAccess(aleoRecord.record_id, targetDoctor, durationBlocks, aleoRecord.data_hash);
-
-    if (result) {
-      // Generate a placeholder access token
-      const token = `${aleoRecord.record_id}_${targetDoctor}_${Date.now()}`;
-      const expires = new Date(Date.now() + durationBlocks * 1000);
-
-      setAccessToken(token);
-      setExpiresAt(expires);
-      setStep('share');
-    }
   };
 
   const handleCopyToken = async () => {
@@ -224,13 +178,11 @@ export function ShareRecordModal({ open, onOpenChange, record }: ShareRecordModa
               exit={{ opacity: 0, x: -20 }}
               className="space-y-4 py-4"
             >
-              {/* Record Info */}
               <div className="rounded-lg bg-slate-50 p-4">
                 <p className="text-sm font-medium text-slate-900">{record.title}</p>
                 <p className="text-xs text-slate-500">{recordType.name}</p>
               </div>
 
-              {/* Doctor Address (Optional) */}
               <div className="space-y-2">
                 <label className="text-sm font-medium text-slate-700">
                   Doctor's Aleo Address
@@ -246,7 +198,6 @@ export function ShareRecordModal({ open, onOpenChange, record }: ShareRecordModa
                 </p>
               </div>
 
-              {/* Duration Select */}
               <div className="space-y-2">
                 <label className="text-sm font-medium text-slate-700">
                   Access Duration
@@ -274,7 +225,6 @@ export function ShareRecordModal({ open, onOpenChange, record }: ShareRecordModa
                 </Select>
               </div>
 
-              {/* Security Notice */}
               <div className="flex items-start gap-3 rounded-lg bg-warning-50 p-4">
                 <AlertTriangle className="mt-0.5 h-5 w-5 text-warning-600" />
                 <div>
@@ -288,7 +238,6 @@ export function ShareRecordModal({ open, onOpenChange, record }: ShareRecordModa
                 </div>
               </div>
 
-              {/* Address Error */}
               {addressError && (
                 <div className="flex items-start gap-3 rounded-lg bg-danger-50 p-4">
                   <XCircle className="mt-0.5 h-5 w-5 text-danger-600" />
@@ -296,54 +245,8 @@ export function ShareRecordModal({ open, onOpenChange, record }: ShareRecordModa
                 </div>
               )}
 
-              {/* Transaction Status */}
-              {transaction.status && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className={cn(
-                    'flex items-start gap-3 rounded-lg p-4',
-                    transaction.status === 'pending' && 'bg-aleo-50',
-                    transaction.status === 'confirmed' && 'bg-success-50',
-                    transaction.status === 'failed' && 'bg-danger-50'
-                  )}
-                >
-                  {transaction.status === 'pending' && (
-                    <Loader2 className="mt-0.5 h-5 w-5 animate-spin text-aleo-600" />
-                  )}
-                  {transaction.status === 'confirmed' && (
-                    <CheckCircle2 className="mt-0.5 h-5 w-5 text-success-600" />
-                  )}
-                  {transaction.status === 'failed' && (
-                    <XCircle className="mt-0.5 h-5 w-5 text-danger-600" />
-                  )}
-                  <div>
-                    <p className={cn(
-                      'text-sm font-medium',
-                      transaction.status === 'pending' && 'text-aleo-900',
-                      transaction.status === 'confirmed' && 'text-success-900',
-                      transaction.status === 'failed' && 'text-danger-900'
-                    )}>
-                      {transaction.message || 'Processing...'}
-                    </p>
-                    {transaction.error && (
-                      <p className="text-xs text-danger-700">{transaction.error}</p>
-                    )}
-                  </div>
-                </motion.div>
-              )}
-
-              {/* Generate Button */}
-              <Button
-                className="w-full"
-                onClick={handleGenerate}
-                loading={transaction.isProcessing}
-                disabled={transaction.isProcessing}
-              >
-                {transaction.isProcessing 
-                  ? (transaction.message || 'Generating Access...') 
-                  : 'Generate QR Code'
-                }
+              <Button className="w-full" onClick={handleGenerate}>
+                Generate QR Code
               </Button>
             </motion.div>
           )}
@@ -356,7 +259,6 @@ export function ShareRecordModal({ open, onOpenChange, record }: ShareRecordModa
               exit={{ opacity: 0, x: 20 }}
               className="space-y-4 py-4"
             >
-              {/* QR Code */}
               <div className="flex flex-col items-center">
                 <div className="rounded-2xl bg-white p-4 shadow-lg ring-1 ring-slate-200">
                   <QRCodeSVG
@@ -374,7 +276,6 @@ export function ShareRecordModal({ open, onOpenChange, record }: ShareRecordModa
                   />
                 </div>
 
-                {/* Countdown */}
                 <div className="mt-4 flex items-center gap-2">
                   <Clock size={16} className="text-slate-400" />
                   <span className="text-sm text-slate-600">Expires in:</span>
@@ -387,7 +288,6 @@ export function ShareRecordModal({ open, onOpenChange, record }: ShareRecordModa
                 </div>
               </div>
 
-              {/* Access Token */}
               <div className="space-y-2">
                 <label className="text-sm font-medium text-slate-700">
                   Access Token
@@ -412,7 +312,6 @@ export function ShareRecordModal({ open, onOpenChange, record }: ShareRecordModa
                 </div>
               </div>
 
-              {/* Record Info */}
               <div className="rounded-lg bg-slate-50 p-3">
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-slate-500">Record</span>
@@ -436,7 +335,6 @@ export function ShareRecordModal({ open, onOpenChange, record }: ShareRecordModa
                 )}
               </div>
 
-              {/* Actions */}
               <div className="flex gap-2">
                 <Button
                   variant="outline"
@@ -456,7 +354,6 @@ export function ShareRecordModal({ open, onOpenChange, record }: ShareRecordModa
                 </Button>
               </div>
 
-              {/* Security Badge */}
               <div className="flex items-center justify-center gap-2 text-xs text-slate-500">
                 <Shield size={14} className="text-success-500" />
                 Secured by Aleo blockchain

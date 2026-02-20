@@ -3,7 +3,7 @@ import { Outlet } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { useUserStore } from '@/store';
-import { useAleo } from '@/hooks/useAleo';
+import { useWallet } from '@provablehq/aleo-wallet-adaptor-react';
 import { WalletConnectModal } from './WalletConnectModal';
 
 interface AppLayoutProps {
@@ -14,10 +14,16 @@ interface AppLayoutProps {
 export function AppLayout({ title, subtitle }: AppLayoutProps) {
   const [showConnectModal, setShowConnectModal] = useState(false);
   const user = useUserStore((state) => state.user);
-  const { disconnect } = useAleo();
+  const { disconnect: disconnectWallet } = useWallet();
+  const { disconnect: disconnectUser } = useUserStore();
 
-  const handleDisconnect = () => {
-    disconnect();
+  const handleDisconnect = async () => {
+    try {
+      await disconnectWallet();
+    } catch (err) {
+      console.warn('[AppLayout] Wallet disconnect error:', err);
+    }
+    disconnectUser();
   };
 
   return (
