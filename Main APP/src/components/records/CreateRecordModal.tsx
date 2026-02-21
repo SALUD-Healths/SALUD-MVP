@@ -31,6 +31,7 @@ import { cn } from '@/lib/utils';
 import { RECORD_TYPES, type RecordType } from '@/types/records';
 import { useWallet } from '@provablehq/aleo-wallet-adaptor-react';
 import { useRecordsStore, useUserStore } from '@/store';
+import { useSyncRecords } from '@/hooks/useSyncRecords';
 import { prepareCreateRecordInputs, inputsToArray } from '@/lib/aleo-utils';
 import { TransactionStatus } from '@provablehq/aleo-types';
 
@@ -88,6 +89,7 @@ export function CreateRecordModal({ open, onOpenChange }: CreateRecordModalProps
   const { executeTransaction, transactionStatus: getTransactionStatus } = useWallet();
   const { user } = useUserStore();
   const { addRecord } = useRecordsStore();
+  const { fetchOnchainCount } = useSyncRecords();
 
   useEffect(() => {
     return () => {
@@ -163,6 +165,9 @@ export function CreateRecordModal({ open, onOpenChange }: CreateRecordModalProps
             isEncrypted: true,
             ownerAddress: user.address,
           });
+          
+          // Refresh onchain count
+          fetchOnchainCount(user.address);
         }
         
         setNotificationType('success');

@@ -10,23 +10,24 @@ interface RecordsState {
   accessGrants: AccessGrant[];
   isLoading: boolean;
   isFetchingFromChain: boolean;
+  lastSyncAt: Date | null;
+  onchainCount: number | null;
   error: string | null;
   
-  // Actions
   addRecord: (record: Omit<MedicalRecord, 'id' | 'createdAt' | 'updatedAt'>) => MedicalRecord;
   updateRecord: (id: string, updates: Partial<MedicalRecord>) => void;
   deleteRecord: (id: string) => void;
   getRecordById: (id: string) => MedicalRecord | undefined;
   getRecordsByType: (type: RecordType) => MedicalRecord[];
   getRecordsByOwner: (ownerAddress: string) => MedicalRecord[];
+  syncRecords: (onchainRecords: MedicalRecord[]) => void;
+  setOnchainCount: (count: number) => void;
   
-  // Access grants
   createAccessGrant: (grant: Omit<AccessGrant, 'id' | 'isExpired'>) => AccessGrant;
   revokeAccessGrant: (accessToken: string) => void;
   getActiveGrants: () => AccessGrant[];
   getGrantsByRecordId: (recordId: string) => AccessGrant[];
   
-  // State management
   setLoading: (loading: boolean) => void;
   setFetchingFromChain: (fetching: boolean) => void;
   setError: (error: string | null) => void;
@@ -41,6 +42,8 @@ export const useRecordsStore = create<RecordsState>()(
       accessGrants: [],
       isLoading: false,
       isFetchingFromChain: false,
+      lastSyncAt: null,
+      onchainCount: null,
       error: null,
 
       addRecord: (record) => {
@@ -88,6 +91,21 @@ export const useRecordsStore = create<RecordsState>()(
 
       getRecordsByType: (type) => {
         return get().records.filter((record) => record.recordType === type);
+      },
+
+      syncRecords: (onchainRecords: MedicalRecord[]) => {
+        set((state) => {
+          const existingIds = new Set(state.records.map(r => r.recordId));
+          const newRecords = onchainRecords.filter(r => !existingIds.has(r.recordId));
+          return {
+            records: [...newRecords, ...state.records],
+            lastSyncAt: new Date(),
+          };
+        });
+      },
+
+      setOnchainCount: (count: number) => {
+        set({ onchainCount: count });
       },
       
       createAccessGrant: (grant) => {
@@ -149,9 +167,10 @@ export const useRecordsStore = create<RecordsState>()(
           return {
             records: state.records,
             accessGrants: state.accessGrants,
+            lastSyncAt: state.lastSyncAt,
           };
         } catch {
-          return { records: [], accessGrants: [] };
+          return { records: [], accessGrants: [], lastSyncAt: null };
         }
       },
     }

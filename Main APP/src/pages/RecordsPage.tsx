@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
   Plus,
@@ -7,6 +7,7 @@ import {
   List,
   FileText,
   Wallet,
+  RefreshCw,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,6 +15,7 @@ import { Badge } from '@/components/ui/badge';
 import { PageHeader, EmptyState } from '@/components/layout';
 import { RecordCard, RecordListItem, CreateRecordModal, ShareRecordModal, RecordDetailModal } from '@/components/records';
 import { useRecordsStore, useUserStore } from '@/store';
+import { useSyncRecords } from '@/hooks/useSyncRecords';
 import { RECORD_TYPES, type MedicalRecord, type RecordType } from '@/types/records';
 import { cn } from '@/lib/utils';
 
@@ -29,7 +31,26 @@ export function RecordsPage() {
   const [selectedType, setSelectedType] = useState<RecordType | 'all'>('all');
 
   const { user } = useUserStore();
-  const records = useRecordsStore((state) => state.records);
+  const allRecords = useRecordsStore((state) => state.records);
+  const onchainCount = useRecordsStore((state) => state.onchainCount);
+  const { sync, fetchOnchainCount, isSyncing, canSync } = useSyncRecords();
+
+  const records = useMemo(() => {
+    if (!user?.address) return [];
+    return allRecords.filter((record) => record.ownerAddress === user.address);
+  }, [allRecords, user?.address]);
+
+  useEffect(() => {
+    if (user?.address && onchainCount === null) {
+      fetchOnchainCount(user.address);
+    }
+  }, [user?.address, onchainCount, fetchOnchainCount]);
+
+  useEffect(() => {
+    if (user?.address && canSync) {
+      sync().catch(() => {});
+    }
+  }, [user?.address, canSync, sync]);
 
   // If not connected, show connect wallet state
   if (!user?.isConnected) {
@@ -81,12 +102,26 @@ export function RecordsPage() {
     <div className="space-y-6">
       <PageHeader
         title="My Records"
-        description={`${records.length} encrypted medical record${records.length !== 1 ? 's' : ''}`}
+        description={`${records.length} local · ${onchainCount !== null ? `${onchainCount} onchain` : '... onchain'}`}
         action={
-          <Button onClick={() => setCreateModalOpen(true)}>
-            <Plus size={18} />
-            New Record
-          </Button>
+          <div className="flex items-center gap-2">
+            {canSync && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => sync().catch(() => {})}
+                disabled={isSyncing}
+                className="gap-2"
+              >
+                <RefreshCw size={16} className={isSyncing ? 'animate-spin' : ''} />
+                {isSyncing ? 'Syncing...' : 'Sync'}
+              </Button>
+            )}
+            <Button onClick={() => setCreateModalOpen(true)}>
+              <Plus size={18} />
+              New Record
+            </Button>
+          </div>
         }
       />
 

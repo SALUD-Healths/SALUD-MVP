@@ -40,7 +40,7 @@ export const WalletProvider: FC<WalletProviderProps> = ({ children }) => {
     <AleoWalletProvider
       wallets={wallets}
       network={Network.TESTNET}
-      autoConnect={false}
+      autoConnect={true}
       decryptPermission={WalletDecryptPermission.UponRequest}
       programs={programs}
       onError={(error) => {

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
   Plus,
@@ -10,6 +10,7 @@ import {
   ArrowRight,
   Activity,
   Wallet,
+  RefreshCw,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,6 +18,7 @@ import { Badge } from '@/components/ui/badge';
 import { PageHeader, EmptyState } from '@/components/layout';
 import { RecordCard, CreateRecordModal, ShareRecordModal, RecordActionsModal, RecordDetailModal } from '@/components/records';
 import { useRecordsStore, useUserStore } from '@/store';
+import { useSyncRecords } from '@/hooks/useSyncRecords';
 import type { MedicalRecord } from '@/types/records';
 
 export function DashboardPage() {
@@ -29,7 +31,15 @@ export function DashboardPage() {
   const records = useRecordsStore((state) => state.records);
   const accessGrants = useRecordsStore((state) => state.accessGrants);
   const isFetchingFromChain = useRecordsStore((state) => state.isFetchingFromChain);
+  const onchainCount = useRecordsStore((state) => state.onchainCount);
   const user = useUserStore((state) => state.user);
+  const { sync, fetchOnchainCount, isSyncing, canSync } = useSyncRecords();
+
+  useEffect(() => {
+    if (user?.address && onchainCount === null) {
+      fetchOnchainCount(user.address);
+    }
+  }, [user?.address, onchainCount, fetchOnchainCount]);
   
   // Compute active grants with useMemo to avoid infinite loops
   // IMPORTANT: All hooks must be called before any conditional returns
@@ -91,11 +101,18 @@ export function DashboardPage() {
   // Stats
   const stats = [
     {
-      label: 'Total Records',
+      label: 'Local Records',
       value: userRecords.length,
       icon: <FileText size={20} />,
       color: 'primary',
-      change: '+2 this month',
+      change: 'In browser storage',
+    },
+    {
+      label: 'Onchain Records',
+      value: onchainCount ?? '...',
+      icon: <Shield size={20} />,
+      color: 'aleo',
+      change: onchainCount !== null ? 'Verified on Aleo' : 'Fetching...',
     },
     {
       label: 'Active Shares',
@@ -103,13 +120,6 @@ export function DashboardPage() {
       icon: <Share2 size={20} />,
       color: 'success',
       change: 'All secure',
-    },
-    {
-      label: 'Privacy Score',
-      value: '100%',
-      icon: <Shield size={20} />,
-      color: 'aleo',
-      change: 'Fully encrypted',
     },
   ];
 
@@ -119,10 +129,24 @@ export function DashboardPage() {
         title={user?.name ? `Welcome back, ${user.name}` : 'Welcome back'}
         description="Manage your private health records on Aleo"
         action={
-          <Button onClick={() => setCreateModalOpen(true)}>
-            <Plus size={18} />
-            New Record
-          </Button>
+          <div className="flex items-center gap-2">
+            {canSync && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => sync().catch(() => {})}
+                disabled={isSyncing}
+                className="gap-2"
+              >
+                <RefreshCw size={16} className={isSyncing ? 'animate-spin' : ''} />
+                {isSyncing ? 'Syncing...' : 'Sync'}
+              </Button>
+            )}
+            <Button onClick={() => setCreateModalOpen(true)}>
+              <Plus size={18} />
+              New Record
+            </Button>
+          </div>
         }
       />
 
