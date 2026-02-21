@@ -32,7 +32,6 @@ interface RecordDetailModalProps {
 export function RecordDetailModal({ open, onOpenChange, record }: RecordDetailModalProps) {
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
   const deleteRecord = useRecordsStore((state) => state.deleteRecord);
 
   if (!record) return null;
@@ -42,13 +41,7 @@ export function RecordDetailModal({ open, onOpenChange, record }: RecordDetailMo
   const finalDescription =
     description || record.description || 'No description provided.';
 
-  const MAX_DESCRIPTION_PREVIEW_CHARS = 220;
-  const isLongDescription = finalDescription.length > MAX_DESCRIPTION_PREVIEW_CHARS;
-  const previewDescription = isLongDescription
-    ? `${finalDescription.slice(0, MAX_DESCRIPTION_PREVIEW_CHARS).trimEnd()}…`
-    : finalDescription;
-  const displayedDescription =
-    isDescriptionExpanded || !isLongDescription ? finalDescription : previewDescription;
+  const displayedDescription = finalDescription;
 
   const handleDelete = () => {
     deleteRecord(record.id);
@@ -91,15 +84,6 @@ export function RecordDetailModal({ open, onOpenChange, record }: RecordDetailMo
               <p className="whitespace-pre-wrap text-sm text-slate-600 leading-relaxed">
                 {displayedDescription}
               </p>
-              {isLongDescription && (
-                <button
-                  type="button"
-                  onClick={() => setIsDescriptionExpanded((prev) => !prev)}
-                  className="mt-2 text-sm font-medium text-primary-600 hover:text-primary-700"
-                >
-                  {isDescriptionExpanded ? 'See less' : 'See more'}
-                </button>
-              )}
             </div>
 
             {/* Metadata Grid */}

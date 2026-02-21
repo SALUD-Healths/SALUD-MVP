@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import {
   Plus,
@@ -17,6 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { PageHeader, EmptyState } from '@/components/layout';
 import { RecordCard, CreateRecordModal, ShareRecordModal, RecordActionsModal, RecordDetailModal } from '@/components/records';
+import { useWallet } from '@provablehq/aleo-wallet-adaptor-react';
 import { useRecordsStore, useUserStore } from '@/store';
 import { useSyncRecords } from '@/hooks/useSyncRecords';
 import type { MedicalRecord } from '@/types/records';
@@ -33,6 +34,17 @@ export function DashboardPage() {
   const isFetchingFromChain = useRecordsStore((state) => state.isFetchingFromChain);
   const user = useUserStore((state) => state.user);
   const { sync, isSyncing, canSync } = useSyncRecords();
+  const { connected, address: walletAddress } = useWallet();
+  
+  const hasSynced = useRef(false);
+
+  // Auto-sync on load and when wallet connects
+  useEffect(() => {
+    if (connected && walletAddress && !hasSynced.current) {
+      hasSynced.current = true;
+      sync();
+    }
+  }, [connected, walletAddress, sync]);
   
   // Compute active grants with useMemo to avoid infinite loops
   // IMPORTANT: All hooks must be called before any conditional returns

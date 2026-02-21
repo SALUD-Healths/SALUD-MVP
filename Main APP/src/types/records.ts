@@ -154,16 +154,15 @@ export function getRecordDisplayData(record: MedicalRecord): { title: string; de
       const parsed = JSON.parse(trimmed);
       if (parsed && typeof parsed === 'object') {
         return {
-          title: typeof (parsed as any).title === 'string' ? (parsed as any).title : undefined,
-          description:
-            typeof (parsed as any).description === 'string' ? (parsed as any).description : undefined,
+          title: (parsed as any).title || (parsed as any).t,
+          description: (parsed as any).description || (parsed as any).d,
         };
       }
     } catch {
     }
 
-    const titleMatch = trimmed.match(/"title"\s*:\s*"([^"]*)/);
-    const descriptionMatch = trimmed.match(/"description"\s*:\s*"([^"]*)/);
+    const titleMatch = trimmed.match(/"title"\s*:\s*"([^"]*)/) || trimmed.match(/"t"\s*:\s*"([^"]*)/);
+    const descriptionMatch = trimmed.match(/"description"\s*:\s*"([^"]*)/) || trimmed.match(/"d"\s*:\s*"([^"]*)/);
 
     return {
       title: titleMatch ? titleMatch[1] : undefined,
