@@ -203,6 +203,15 @@ export function CreateRecordModal({ open, onOpenChange }: CreateRecordModalProps
       return;
     }
 
+    // Check if wallet is connected
+    if (!user?.isConnected || !user?.address) {
+      setNotificationType('error');
+      setNotificationTitle('Wallet Not Connected');
+      setNotificationMessage('Please connect your wallet to create a record on the blockchain.');
+      setNotificationOpen(true);
+      return;
+    }
+
     setIsSubmitting(true);
     setOnchainTransactionId(null);
     setTransactionStatus(null);

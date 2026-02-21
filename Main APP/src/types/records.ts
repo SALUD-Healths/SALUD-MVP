@@ -127,6 +127,8 @@ export interface QRCodeData {
   recordId: string;
   patientAddress: string;
   expiresAt: number; // Unix timestamp
+  encryptedViewKey?: string; // Encrypted with doctor's public key
+  encryptedData?: string; // The encrypted record data parts
 }
 
 /**

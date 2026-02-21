@@ -32,7 +32,8 @@ import {
 } from '@/components/ui/select';
 import { copyToClipboard, blocksToTime, truncateAddress } from '@/lib/utils';
 import { DURATION_OPTIONS, RECORD_TYPES, type MedicalRecord, type QRCodeData, type RecordType } from '@/types/records';
-import { useUserStore } from '@/store';
+import { useUserStore, useRecordsStore } from '@/store';
+import { encryptWithPublicKey, generateViewKey, derivePublicKey } from '@/lib/crypto-utils';
 
 interface ShareRecordModalProps {
   open: boolean;
@@ -49,8 +50,10 @@ export function ShareRecordModal({ open, onOpenChange, record }: ShareRecordModa
   const [copied, setCopied] = useState(false);
   const [countdown, setCountdown] = useState<string>('');
   const [addressError, setAddressError] = useState<string | null>(null);
+  const [encryptedViewKey, setEncryptedViewKey] = useState<string | null>(null);
 
   const user = useUserStore((state) => state.user);
+  const createAccessGrant = useRecordsStore((state) => state.createAccessGrant);
 
   useEffect(() => {
     if (!open) {
@@ -61,6 +64,7 @@ export function ShareRecordModal({ open, onOpenChange, record }: ShareRecordModa
       setExpiresAt(null);
       setCopied(false);
       setAddressError(null);
+      setEncryptedViewKey(null);
     }
   }, [open]);
 
@@ -104,6 +108,37 @@ export function ShareRecordModal({ open, onOpenChange, record }: ShareRecordModa
     }
 
     setAddressError(null);
+
+    // Generate access token (simplified - in production would use blockchain)
+    const token = `token_${Math.random().toString(36).substring(2, 15)}_${Date.now()}`;
+    
+    // Calculate expiration time
+    const now = new Date();
+    const expirationTime = new Date(now.getTime() + (durationBlocks * 15 * 1000)); // 15 sec per block
+    
+    // Generate or get view key for this record
+    const viewKey = user.viewKey || generateViewKey(user.address);
+    
+    // Encrypt view key with doctor's public key (or use patient's if no specific doctor)
+    const doctorPublicKey = doctorAddress ? derivePublicKey(doctorAddress) : derivePublicKey(user.address);
+    const encViewKey = encryptWithPublicKey(viewKey, doctorPublicKey);
+    
+    // Create access grant in store with encrypted view key
+    createAccessGrant({
+      accessToken: token,
+      recordId: record.recordId || record.id,
+      patientAddress: user.address,
+      doctorAddress: doctorAddress || '',
+      grantedAt: now,
+      expiresAt: expirationTime,
+      durationBlocks,
+      isRevoked: false,
+    });
+
+    setAccessToken(token);
+    setExpiresAt(expirationTime);
+    setEncryptedViewKey(encViewKey);
+    setStep('share');
   };
 
   const handleCopyToken = async () => {
@@ -138,13 +173,15 @@ export function ShareRecordModal({ open, onOpenChange, record }: ShareRecordModa
     img.src = 'data:image/svg+xml;base64,' + btoa(svgData);
   };
 
-  const qrData: QRCodeData | null = accessToken && record && user
+  const qrData: QRCodeData | null = accessToken && record && user && encryptedViewKey
     ? {
         version: 1,
         accessToken,
         recordId: record.recordId,
         patientAddress: user.address,
         expiresAt: expiresAt?.getTime() || 0,
+        encryptedViewKey,
+        encryptedData: record.data,
       }
     : null;
 
@@ -315,7 +352,7 @@ export function ShareRecordModal({ open, onOpenChange, record }: ShareRecordModa
               <div className="rounded-lg bg-slate-50 p-3">
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-slate-500">Record</span>
-                  <span className="text-sm font-medium text-slate-900">
+                  <span className="text-sm font-medium text-slate-900 truncate max-w-[200px]" title={record.title}>
                     {record.title}
                   </span>
                 </div>
@@ -328,7 +365,7 @@ export function ShareRecordModal({ open, onOpenChange, record }: ShareRecordModa
                 {doctorAddress && (
                   <div className="mt-2 flex items-center justify-between">
                     <span className="text-xs text-slate-500">Restricted to</span>
-                    <span className="text-sm font-mono text-slate-900">
+                    <span className="text-sm font-mono text-slate-900 truncate max-w-[150px]" title={doctorAddress}>
                       {truncateAddress(doctorAddress)}
                     </span>
                   </div>

@@ -15,7 +15,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { PageHeader, EmptyState } from '@/components/layout';
-import { RecordCard, CreateRecordModal, ShareRecordModal, RecordActionsModal } from '@/components/records';
+import { RecordCard, CreateRecordModal, ShareRecordModal, RecordActionsModal, RecordDetailModal } from '@/components/records';
 import { useRecordsStore, useUserStore } from '@/store';
 import type { MedicalRecord } from '@/types/records';
 
@@ -23,6 +23,7 @@ export function DashboardPage() {
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [actionsModalOpen, setActionsModalOpen] = useState(false);
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<MedicalRecord | null>(null);
 
   const records = useRecordsStore((state) => state.records);
@@ -296,12 +297,19 @@ export function DashboardPage() {
         onOpenChange={setActionsModalOpen}
         record={selectedRecord}
         onView={(record) => {
-          console.log('View record:', record);
-          alert('View functionality coming soon!');
+          setSelectedRecord(record);
+          setActionsModalOpen(false);
+          setDetailModalOpen(true);
         }}
         onShare={handleShare}
         onEdit={handleEdit}
         onDelete={handleDelete}
+      />
+
+      <RecordDetailModal
+        open={detailModalOpen}
+        onOpenChange={setDetailModalOpen}
+        record={selectedRecord}
       />
     </div>
   );

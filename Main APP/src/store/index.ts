@@ -44,18 +44,24 @@ export const useRecordsStore = create<RecordsState>()(
       error: null,
 
       addRecord: (record) => {
-        const newRecord: MedicalRecord = {
-          ...record,
-          id: generateId(),
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        };
-        
-        set((state) => ({
-          records: [newRecord, ...state.records],
-        }));
-        
-        return newRecord;
+        try {
+          const newRecord: MedicalRecord = {
+            ...record,
+            id: generateId(),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          };
+          
+          set((state) => ({
+            records: [newRecord, ...state.records],
+          }));
+          
+          return newRecord;
+        } catch (error) {
+          console.error('Error adding record:', error);
+          get().setError('Failed to add record');
+          throw error;
+        }
       },
 
       getRecordsByOwner: (ownerAddress: string) => {
@@ -120,10 +126,34 @@ export const useRecordsStore = create<RecordsState>()(
       setFetchingFromChain: (isFetchingFromChain) => set({ isFetchingFromChain }),
       setError: (error) => set({ error }),
       clearError: () => set({ error: null }),
-      clearRecords: () => set({ records: [], accessGrants: [] }),
+      clearRecords: () => {
+        set({ records: [], accessGrants: [] });
+        localStorage.removeItem('salud-records-storage');
+      },
+      hardReset: () => {
+        localStorage.removeItem('salud-records-storage');
+        localStorage.removeItem('salud-user-storage');
+        set({ records: [], accessGrants: [], error: null });
+      },
     }),
     {
       name: 'salud-records-storage',
+      onRehydrateStorage: () => (_state, error) => {
+        if (error) {
+          console.error('Failed to rehydrate storage:', error);
+          localStorage.removeItem('salud-records-storage');
+        }
+      },
+      partialize: (state) => {
+        try {
+          return {
+            records: state.records,
+            accessGrants: state.accessGrants,
+          };
+        } catch {
+          return { records: [], accessGrants: [] };
+        }
+      },
     }
   )
 );
@@ -173,9 +203,20 @@ export const useUserStore = create<UserState>()(
           user: state.user ? { ...state.user, name } : null,
         }));
       },
+      hardReset: () => {
+        localStorage.removeItem('salud-user-storage');
+        localStorage.removeItem('salud-records-storage');
+        set({ user: null });
+      },
     }),
     {
       name: 'salud-user-storage',
+      onRehydrateStorage: () => (_state, error) => {
+        if (error) {
+          console.error('Failed to rehydrate user storage:', error);
+          localStorage.removeItem('salud-user-storage');
+        }
+      },
     }
   )
 );

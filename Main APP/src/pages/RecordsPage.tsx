@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { PageHeader, EmptyState } from '@/components/layout';
-import { RecordCard, RecordListItem, CreateRecordModal, ShareRecordModal } from '@/components/records';
+import { RecordCard, RecordListItem, CreateRecordModal, ShareRecordModal, RecordDetailModal } from '@/components/records';
 import { useRecordsStore, useUserStore } from '@/store';
 import { RECORD_TYPES, type MedicalRecord, type RecordType } from '@/types/records';
 import { cn } from '@/lib/utils';
@@ -22,6 +22,7 @@ type ViewMode = 'grid' | 'list';
 export function RecordsPage() {
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<MedicalRecord | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [searchQuery, setSearchQuery] = useState('');
@@ -66,8 +67,8 @@ export function RecordsPage() {
   };
 
   const handleView = (record: MedicalRecord) => {
-    // TODO: Implement record detail view
-    console.log('View record:', record);
+    setSelectedRecord(record);
+    setDetailModalOpen(true);
   };
 
   // Count records by type
@@ -232,6 +233,12 @@ export function RecordsPage() {
       <ShareRecordModal
         open={shareModalOpen}
         onOpenChange={setShareModalOpen}
+        record={selectedRecord}
+      />
+
+      <RecordDetailModal
+        open={detailModalOpen}
+        onOpenChange={setDetailModalOpen}
         record={selectedRecord}
       />
     </div>
