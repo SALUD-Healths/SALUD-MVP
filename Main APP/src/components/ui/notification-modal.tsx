@@ -70,11 +70,9 @@ export function NotificationModal({
               href={explorerUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-2 text-sm text-primary-600 hover:text-primary-700 underline"
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors"
             >
-              <span className="font-mono truncate max-w-[200px]">
-                {transactionHash.slice(0, 12)}...{transactionHash.slice(-8)}
-              </span>
+              View Transaction
               <ExternalLink size={14} />
             </a>
           )}

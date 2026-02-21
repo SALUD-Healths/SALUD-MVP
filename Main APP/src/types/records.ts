@@ -174,13 +174,13 @@ export function getRecordDisplayData(record: MedicalRecord): { title: string; de
   const fromTitle = extractFrom(title);
 
   const resolvedTitle = fromTitle.title || fromData.title;
-  const resolvedDescription = fromTitle.description || fromData.description;
+  const resolvedDescription = fromData.description || fromTitle.description;
 
   if (resolvedTitle) {
     title = resolvedTitle;
   }
 
-  if (!description && resolvedDescription) {
+  if (resolvedDescription) {
     description = resolvedDescription;
   }
 

@@ -175,7 +175,6 @@ export function CreateRecordModal({ open, onOpenChange }: CreateRecordModalProps
         setNotificationMessage('Your medical record has been successfully created on the Aleo blockchain.');
         setNotificationTxHash(statusResponse.transactionId || onchainTransactionId);
         setNotificationOpen(true);
-        handleClose();
       } else if (
         statusResponse.status.toLowerCase() === TransactionStatus.FAILED.toLowerCase() ||
         statusResponse.status.toLowerCase() === TransactionStatus.REJECTED.toLowerCase()
@@ -527,11 +526,17 @@ export function CreateRecordModal({ open, onOpenChange }: CreateRecordModalProps
 
       <NotificationModal
         open={notificationOpen}
-        onOpenChange={setNotificationOpen}
+        onOpenChange={(open) => {
+          setNotificationOpen(open);
+          if (!open) {
+            handleClose();
+          }
+        }}
         type={notificationType}
         title={notificationTitle}
         message={notificationMessage}
         transactionHash={notificationTxHash || undefined}
+        network="testnet"
       />
     </Dialog>
   );
