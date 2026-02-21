@@ -1,8 +1,6 @@
-// Polyfills for Aleo SDK browser compatibility
 import { Buffer } from 'buffer'
 import process from 'process'
 
-// Set global polyfills
 window.Buffer = Buffer
 window.process = process
 

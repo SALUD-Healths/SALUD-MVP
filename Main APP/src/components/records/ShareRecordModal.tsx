@@ -123,7 +123,6 @@ export function ShareRecordModal({ open, onOpenChange, record }: ShareRecordModa
     const doctorPublicKey = doctorAddress ? derivePublicKey(doctorAddress) : derivePublicKey(user.address);
     const encViewKey = encryptWithPublicKey(viewKey, doctorPublicKey);
     
-    // Create access grant in store with encrypted view key
     createAccessGrant({
       accessToken: token,
       recordId: record.recordId || record.id,

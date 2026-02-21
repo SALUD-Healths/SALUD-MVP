@@ -174,16 +174,12 @@ export function prepareCreateRecordInputs(
   recordType: RecordType,
   makeDiscoverable: boolean = true
 ): CreateRecordInputs {
-  // Create the data string
   const dataStr = createRecordData(title, description);
   
-  // Convert to field elements
   const [part1, part2, part3, part4] = stringToFieldElements(dataStr);
   
-  // Hash the data
   const dataHash = hashData(dataStr);
   
-  // Generate a random nonce
   const nonce = generateNonce();
   
   return {

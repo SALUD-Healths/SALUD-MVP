@@ -151,7 +151,7 @@ export function RecordActionsModal({
               Are you sure you want to delete <strong>{record.title}</strong>? This action cannot be undone.
             </p>
             <p className="mt-2 text-sm text-slate-500">
-              The record will be removed from your local storage. On-chain records cannot be deleted from the blockchain.
+              This will remove the record from your synced view. On-chain records cannot be deleted from the blockchain.
             </p>
           </div>
 

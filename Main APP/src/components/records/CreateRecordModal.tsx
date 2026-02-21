@@ -153,7 +153,7 @@ export function CreateRecordModal({ open, onOpenChange }: CreateRecordModalProps
         setIsPollingStatus(false);
         clear();
         
-        // Add record to local store
+        // Add record to synced records
         if (user?.address && onchainTransactionId) {
           addRecord({
             recordId: onchainTransactionId,
@@ -208,7 +208,6 @@ export function CreateRecordModal({ open, onOpenChange }: CreateRecordModalProps
       return;
     }
 
-    // Check if wallet is connected
     if (!user?.isConnected || !user?.address) {
       setNotificationType('error');
       setNotificationTitle('Wallet Not Connected');

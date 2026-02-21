@@ -102,7 +102,7 @@ export function RecordsPage() {
     <div className="space-y-6">
       <PageHeader
         title="My Records"
-        description={`${records.length} local · ${onchainCount !== null ? `${onchainCount} onchain` : '... onchain'}`}
+        description={`${records.length} synced · ${onchainCount !== null ? `${onchainCount} onchain` : '... onchain'}`}
         action={
           <div className="flex items-center gap-2">
             {canSync && (

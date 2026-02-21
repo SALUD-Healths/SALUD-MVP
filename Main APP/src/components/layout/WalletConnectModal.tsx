@@ -33,10 +33,8 @@ export function WalletConnectModal({ open, onOpenChange }: WalletConnectModalPro
   } = useWallet();
   const { connect: connectUser, disconnect: disconnectUser } = useUserStore();
 
-  // When Shield Wallet connects, sync with our app state
   useEffect(() => {
     if (connected && address) {
-      // Update our app's user store with the wallet address
       connectUser(address);
       setPendingConnect(false);
       onOpenChange(false);
@@ -55,7 +53,6 @@ export function WalletConnectModal({ open, onOpenChange }: WalletConnectModalPro
     }
   }, [pendingConnect, wallet, connected, connecting, connect]);
 
-  // Debug: Log available wallets
   useEffect(() => {
     console.log('[WalletConnect] Available wallets:', wallets);
     wallets.forEach(w => {
@@ -77,7 +74,6 @@ export function WalletConnectModal({ open, onOpenChange }: WalletConnectModalPro
 
       console.log('[WalletConnect] Shield wallet readyState:', shieldWallet.readyState);
 
-      // Check if Shield wallet is installed
       if (shieldWallet.readyState !== 'Installed') {
         window.open('https://shield.app', '_blank');
         setError('Shield Wallet is not installed. Please install it from shield.app and refresh the page.');

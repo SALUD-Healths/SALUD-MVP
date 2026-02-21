@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import {
@@ -46,8 +47,6 @@ export function DashboardPage() {
     }
   }, [connected, walletAddress, sync]);
   
-  // Compute active grants with useMemo to avoid infinite loops
-  // IMPORTANT: All hooks must be called before any conditional returns
   const activeGrants = useMemo(() => {
     const now = new Date();
     return accessGrants.filter(
@@ -74,13 +73,12 @@ export function DashboardPage() {
   };
 
   const handleEdit = (record: MedicalRecord) => {
-    // TODO: Implement edit functionality
     console.log('Edit record:', record);
     alert('Edit functionality coming soon!');
   };
 
   const handleDelete = (record: MedicalRecord) => {
-    // Delete from local store
+    // Remove from synced records
     const { deleteRecord } = useRecordsStore.getState();
     deleteRecord(record.id);
     console.log('Deleted record:', record.id);
@@ -213,7 +211,7 @@ export function DashboardPage() {
               </div>
             </button>
 
-            <button className="group flex items-center gap-4 rounded-xl border-2 border-dashed border-slate-200 p-4 transition-all hover:border-aleo-300 hover:bg-aleo-50">
+            <Link to="/shared" className="group flex items-center gap-4 rounded-xl border-2 border-dashed border-slate-200 p-4 transition-all hover:border-aleo-300 hover:bg-aleo-50">
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-aleo-100 text-aleo-600 transition-colors group-hover:bg-aleo-200">
                 <Clock size={24} />
               </div>
@@ -221,7 +219,7 @@ export function DashboardPage() {
                 <p className="font-medium text-slate-900">View Access History</p>
                 <p className="text-sm text-slate-500">Check who accessed records</p>
               </div>
-            </button>
+            </Link>
           </div>
         </CardContent>
       </Card>
