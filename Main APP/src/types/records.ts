@@ -142,6 +142,52 @@ export interface User {
   balance?: number;
 }
 
+export function getRecordDisplayData(record: MedicalRecord): { title: string; description: string } {
+  let title = record.title;
+  let description = record.description;
+
+  const extractFrom = (value?: string | null): { title?: string; description?: string } => {
+    if (!value) return {};
+    const trimmed = value.trim();
+
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (parsed && typeof parsed === 'object') {
+        return {
+          title: typeof (parsed as any).title === 'string' ? (parsed as any).title : undefined,
+          description:
+            typeof (parsed as any).description === 'string' ? (parsed as any).description : undefined,
+        };
+      }
+    } catch {
+    }
+
+    const titleMatch = trimmed.match(/"title"\s*:\s*"([^"]*)/);
+    const descriptionMatch = trimmed.match(/"description"\s*:\s*"([^"]*)/);
+
+    return {
+      title: titleMatch ? titleMatch[1] : undefined,
+      description: descriptionMatch ? descriptionMatch[1] : undefined,
+    };
+  };
+
+  const fromData = extractFrom(record.data);
+  const fromTitle = extractFrom(title);
+
+  const resolvedTitle = fromTitle.title || fromData.title;
+  const resolvedDescription = fromTitle.description || fromData.description;
+
+  if (resolvedTitle) {
+    title = resolvedTitle;
+  }
+
+  if (!description && resolvedDescription) {
+    description = resolvedDescription;
+  }
+
+  return { title, description };
+}
+
 /**
  * Transaction status
  */

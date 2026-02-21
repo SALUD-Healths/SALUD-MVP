@@ -132,11 +132,9 @@ export function generateNonce(): string {
  * Create the data string from title and description
  */
 export function createRecordData(title: string, description: string): string {
-  // Create a JSON structure for the data
   const data = {
-    title,
-    description,
-    timestamp: Date.now(),
+    t: title,
+    d: description,
   };
   
   return JSON.stringify(data);

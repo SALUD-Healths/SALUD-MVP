@@ -32,7 +32,7 @@ import { RECORD_TYPES, type RecordType } from '@/types/records';
 import { useWallet } from '@provablehq/aleo-wallet-adaptor-react';
 import { useRecordsStore, useUserStore } from '@/store';
 import { useSyncRecords } from '@/hooks/useSyncRecords';
-import { prepareCreateRecordInputs, inputsToArray } from '@/lib/aleo-utils';
+import { prepareCreateRecordInputs, inputsToArray, createRecordData } from '@/lib/aleo-utils';
 import { TransactionStatus } from '@provablehq/aleo-types';
 
 const iconMap: Record<string, React.ReactNode> = {
@@ -127,6 +127,12 @@ export function CreateRecordModal({ open, onOpenChange }: CreateRecordModalProps
       newErrors.description = 'Description is required';
     } else if (description.length < 10) {
       newErrors.description = 'Description must be at least 10 characters';
+    } else {
+      const encoder = new TextEncoder();
+      const bytesLength = encoder.encode(createRecordData(title, description)).length;
+      if (bytesLength > 120) {
+        newErrors.description = 'Description is too long to store on-chain. Please shorten it.';
+      }
     }
 
     setErrors(newErrors);

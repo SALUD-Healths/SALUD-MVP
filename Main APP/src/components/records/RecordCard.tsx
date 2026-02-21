@@ -26,7 +26,7 @@ import {
   TooltipProvider,
 } from '@/components/ui/tooltip';
 import { cn, formatRelativeTime } from '@/lib/utils';
-import { RECORD_TYPES, type MedicalRecord, type RecordType } from '@/types/records';
+import { RECORD_TYPES, type MedicalRecord, type RecordType, getRecordDisplayData } from '@/types/records';
 
 // Icon mapping
 const iconMap: Record<string, React.ReactNode> = {
@@ -76,6 +76,7 @@ export function RecordCard({
   const recordTypeInfo = RECORD_TYPES[record.recordType as RecordType];
   const colors = colorMap[recordTypeInfo.color] || colorMap.slate;
   const icon = iconMap[recordTypeInfo.icon] || <FileText size={20} />;
+  const { title } = getRecordDisplayData(record);
 
   return (
     <TooltipProvider>
@@ -112,7 +113,7 @@ export function RecordCard({
                 {/* Title & Type */}
                 <div className="min-w-0">
                   <h3 className="font-semibold text-slate-900 truncate pr-2">
-                    {record.title}
+                    {title}
                   </h3>
                   <Badge
                     variant="outline"
@@ -179,13 +180,7 @@ export function RecordCard({
               </div>
             </div>
 
-            {/* Description */}
-            <p className="mb-4 line-clamp-2 text-sm text-slate-500">
-              {record.description}
-            </p>
-
-            {/* Footer */}
-            <div className="flex items-center justify-between border-t border-slate-100 pt-4">
+            <div className="flex items-center justify-between border-t border-slate-100 pt-4 mt-2">
               <div className="flex items-center gap-4 text-xs text-slate-400">
                 <span className="flex items-center gap-1">
                   <Clock size={12} />
@@ -230,6 +225,7 @@ export function RecordListItem({ record, onShare, onView }: RecordListItemProps)
   const recordTypeInfo = RECORD_TYPES[record.recordType as RecordType];
   const colors = colorMap[recordTypeInfo.color] || colorMap.slate;
   const icon = iconMap[recordTypeInfo.icon] || <FileText size={16} />;
+  const { title } = getRecordDisplayData(record);
 
   return (
     <TooltipProvider>
@@ -250,7 +246,7 @@ export function RecordListItem({ record, onShare, onView }: RecordListItemProps)
 
         {/* Content */}
         <div className="min-w-0 flex-1">
-          <h4 className="font-medium text-slate-900 truncate">{record.title}</h4>
+          <h4 className="font-medium text-slate-900 truncate">{title}</h4>
           <p className="text-sm text-slate-500">{recordTypeInfo.name}</p>
         </div>
 

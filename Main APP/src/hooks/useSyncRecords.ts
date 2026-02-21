@@ -106,9 +106,12 @@ function parseRecordPlaintext(plaintextStr: string, ownerAddress: string): Medic
 
     try {
       const jsonData = JSON.parse(dataStr);
-      title = jsonData.title || title;
-      description = jsonData.description || description;
-      if (jsonData.timestamp) createdAt = new Date(jsonData.timestamp);
+      const anyData = jsonData as any;
+      title = anyData.title || anyData.t || title;
+      description = anyData.description || anyData.d || description;
+      if (anyData.timestamp || anyData.ts) {
+        createdAt = new Date(anyData.timestamp || anyData.ts);
+      }
     } catch {
       if (dataStr && dataStr !== '0') {
         title = dataStr.slice(0, 40);

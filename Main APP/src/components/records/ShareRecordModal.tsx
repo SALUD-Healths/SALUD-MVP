@@ -31,7 +31,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { copyToClipboard, blocksToTime, truncateAddress } from '@/lib/utils';
-import { DURATION_OPTIONS, RECORD_TYPES, type MedicalRecord, type QRCodeData, type RecordType } from '@/types/records';
+import { DURATION_OPTIONS, RECORD_TYPES, type MedicalRecord, type QRCodeData, type RecordType, getRecordDisplayData } from '@/types/records';
 import { useUserStore, useRecordsStore } from '@/store';
 import { encryptWithPublicKey, generateViewKey, derivePublicKey } from '@/lib/crypto-utils';
 
@@ -165,7 +165,7 @@ export function ShareRecordModal({ open, onOpenChange, record }: ShareRecordModa
       ctx?.drawImage(img, 0, 0);
       const pngFile = canvas.toDataURL('image/png');
       const downloadLink = document.createElement('a');
-      downloadLink.download = `salud-qr-${record?.title.replace(/\s+/g, '-').toLowerCase()}.png`;
+      downloadLink.download = `salud-qr-${title.replace(/\s+/g, '-').toLowerCase()}.png`;
       downloadLink.href = pngFile;
       downloadLink.click();
     };
@@ -188,6 +188,7 @@ export function ShareRecordModal({ open, onOpenChange, record }: ShareRecordModa
   if (!record) return null;
 
   const recordType = RECORD_TYPES[record.recordType as RecordType];
+  const { title } = getRecordDisplayData(record);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -216,7 +217,7 @@ export function ShareRecordModal({ open, onOpenChange, record }: ShareRecordModa
               className="space-y-4 py-4"
             >
               <div className="rounded-lg bg-slate-50 p-4">
-                <p className="text-sm font-medium text-slate-900">{record.title}</p>
+                <p className="text-sm font-medium text-slate-900">{title}</p>
                 <p className="text-xs text-slate-500">{recordType.name}</p>
               </div>
 

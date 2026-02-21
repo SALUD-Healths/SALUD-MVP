@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import {
   Plus,
@@ -31,15 +31,8 @@ export function DashboardPage() {
   const records = useRecordsStore((state) => state.records);
   const accessGrants = useRecordsStore((state) => state.accessGrants);
   const isFetchingFromChain = useRecordsStore((state) => state.isFetchingFromChain);
-  const onchainCount = useRecordsStore((state) => state.onchainCount);
   const user = useUserStore((state) => state.user);
-  const { sync, fetchOnchainCount, isSyncing, canSync } = useSyncRecords();
-
-  useEffect(() => {
-    if (user?.address && onchainCount === null) {
-      fetchOnchainCount(user.address);
-    }
-  }, [user?.address, onchainCount, fetchOnchainCount]);
+  const { sync, isSyncing, canSync } = useSyncRecords();
   
   // Compute active grants with useMemo to avoid infinite loops
   // IMPORTANT: All hooks must be called before any conditional returns
@@ -101,18 +94,11 @@ export function DashboardPage() {
   // Stats
   const stats = [
     {
-      label: 'Local Records',
+      label: 'Medical Records',
       value: userRecords.length,
       icon: <FileText size={20} />,
       color: 'primary',
-      change: 'In browser storage',
-    },
-    {
-      label: 'Onchain Records',
-      value: onchainCount ?? '...',
-      icon: <Shield size={20} />,
-      color: 'aleo',
-      change: onchainCount !== null ? 'Verified on Aleo' : 'Fetching...',
+      change: 'secured on Aleo Block',
     },
     {
       label: 'Active Shares',
