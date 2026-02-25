@@ -229,7 +229,7 @@ export function CreateRecordModal({ open, onOpenChange }: CreateRecordModalProps
       );
 
       const tx = await executeTransaction({
-        program: 'salud_health_records_v2.aleo',
+        program: 'salud_health_records_v4.aleo',
         function: 'create_record',
         inputs: inputsToArray(inputs),
         fee: 100000,

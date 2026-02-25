@@ -4,7 +4,7 @@ import { useRecordsStore } from '@/store';
 import { fieldElementsToString } from '@/lib/aleo-utils';
 import type { MedicalRecord, RecordType } from '@/types/records';
 
-const PROGRAM_ID = 'salud_health_records_v2.aleo';
+const PROGRAM_ID = 'salud_health_records_v4.aleo';
 const API_URL = 'https://api.provable.com/v2/testnet';
 
 interface WalletRecord {
@@ -88,15 +88,23 @@ function parseRecordPlaintext(plaintextStr: string, ownerAddress: string): Medic
     const dataPart2 = String(jsObject.data_part2 || '0').replace(/field$/, '');
     const dataPart3 = String(jsObject.data_part3 || '0').replace(/field$/, '');
     const dataPart4 = String(jsObject.data_part4 || '0').replace(/field$/, '');
+    const dataPart5 = String(jsObject.data_part5 || '0').replace(/field$/, '');
+    const dataPart6 = String(jsObject.data_part6 || '0').replace(/field$/, '');
+    const dataPart7 = String(jsObject.data_part7 || '0').replace(/field$/, '');
+    const dataPart8 = String(jsObject.data_part8 || '0').replace(/field$/, '');
 
-    console.log('Data parts:', { dataPart1, dataPart2, dataPart3, dataPart4 });
+    console.log('Data parts:', { dataPart1, dataPart2, dataPart3, dataPart4, dataPart5, dataPart6, dataPart7, dataPart8 });
 
-    const dataStr = fieldElementsToString(
+    const dataStr = fieldElementsToString([
       `${dataPart1}field`,
       `${dataPart2}field`,
       `${dataPart3}field`,
-      `${dataPart4}field`
-    );
+      `${dataPart4}field`,
+      `${dataPart5}field`,
+      `${dataPart6}field`,
+      `${dataPart7}field`,
+      `${dataPart8}field`,
+    ]);
 
     console.log('dataStr:', dataStr);
 

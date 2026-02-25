@@ -6,28 +6,32 @@
 
 import type { RecordType } from '@/types/records';
 
+const NUM_FIELD_PARTS = 8;
+const BYTES_PER_FIELD = 30;
+
 /**
  * Convert a string to bytes and then to field elements
- * Each field can hold ~31 bytes safely (we'll use 30 to be safe)
+ * Using 8 fields to get ~240 bytes capacity
  */
-export function stringToFieldElements(data: string): [string, string, string, string] {
-  // Convert string to bytes
+export function stringToFieldElements(data: string): string[] {
   const encoder = new TextEncoder();
   const bytes = encoder.encode(data);
   
-  // Split into 4 parts (30 bytes each max)
-  const part1 = bytes.slice(0, 30);
-  const part2 = bytes.slice(30, 60);
-  const part3 = bytes.slice(60, 90);
-  const part4 = bytes.slice(90, 120);
+  const fields: string[] = [];
   
-  // Convert each part to a field element
-  const field1 = bytesToField(part1);
-  const field2 = bytesToField(part2);
-  const field3 = bytesToField(part3);
-  const field4 = bytesToField(part4);
+  for (let i = 0; i < NUM_FIELD_PARTS; i++) {
+    const start = i * BYTES_PER_FIELD;
+    const end = Math.min(start + BYTES_PER_FIELD, bytes.length);
+    const part = bytes.slice(start, end);
+    fields.push(bytesToField(part));
+  }
   
-  return [field1, field2, field3, field4];
+  // Pad remaining fields with zeros
+  while (fields.length < NUM_FIELD_PARTS) {
+    fields.push('0field');
+  }
+  
+  return fields;
 }
 
 /**
@@ -38,7 +42,6 @@ function bytesToField(bytes: Uint8Array): string {
     return '0field';
   }
   
-  // Convert bytes to a big integer
   let value = BigInt(0);
   for (let i = 0; i < bytes.length; i++) {
     value = (value << BigInt(8)) | BigInt(bytes[i]);
@@ -50,30 +53,22 @@ function bytesToField(bytes: Uint8Array): string {
 /**
  * Convert field elements back to string
  */
-export function fieldElementsToString(
-  field1: string,
-  field2: string,
-  field3: string,
-  field4: string
-): string {
-  const bytes1 = fieldToBytes(field1);
-  const bytes2 = fieldToBytes(field2);
-  const bytes3 = fieldToBytes(field3);
-  const bytes4 = fieldToBytes(field4);
+export function fieldElementsToString(fields: string[]): string {
+  const allBytes: number[] = [];
   
-  // Combine all bytes
-  const allBytes = new Uint8Array([...bytes1, ...bytes2, ...bytes3, ...bytes4]);
+  for (const fieldStr of fields) {
+    const bytes = fieldToBytes(fieldStr);
+    allBytes.push(...bytes);
+  }
   
-  // Decode to string
   const decoder = new TextDecoder();
-  return decoder.decode(allBytes);
+  return decoder.decode(new Uint8Array(allBytes));
 }
 
 /**
  * Convert a field element string to bytes
  */
 function fieldToBytes(fieldStr: string): Uint8Array {
-  // Remove 'field' suffix
   const valueStr = fieldStr.replace('field', '');
   
   if (valueStr === '0' || valueStr === '') {
@@ -83,7 +78,6 @@ function fieldToBytes(fieldStr: string): Uint8Array {
   let value = BigInt(valueStr);
   const bytes: number[] = [];
   
-  // Extract bytes
   while (value > 0) {
     bytes.unshift(Number(value & BigInt(0xff)));
     value = value >> BigInt(8);
@@ -94,19 +88,16 @@ function fieldToBytes(fieldStr: string): Uint8Array {
 
 /**
  * Hash data using a simple hash function (for data_hash)
- * In production, you might want to use a more robust hash
  */
 export function hashData(data: string): string {
   const encoder = new TextEncoder();
   const bytes = encoder.encode(data);
   
-  // Simple hash: sum of all bytes multiplied by their position
   let hash = BigInt(0);
   for (let i = 0; i < bytes.length; i++) {
     hash = hash + BigInt(bytes[i]) * BigInt(i + 1);
   }
   
-  // Make it more random by adding a large prime
   hash = hash * BigInt(31) + BigInt(17);
   
   return `${hash.toString()}field`;
@@ -116,7 +107,6 @@ export function hashData(data: string): string {
  * Generate a random nonce for unique ID generation
  */
 export function generateNonce(): string {
-  // Generate a random bigint nonce
   const randomBytes = new Uint8Array(16);
   crypto.getRandomValues(randomBytes);
   
@@ -162,6 +152,10 @@ export interface CreateRecordInputs {
   data_part2: string;
   data_part3: string;
   data_part4: string;
+  data_part5: string;
+  data_part6: string;
+  data_part7: string;
+  data_part8: string;
   record_type: string;
   data_hash: string;
   nonce: string;
@@ -176,10 +170,9 @@ export function prepareCreateRecordInputs(
 ): CreateRecordInputs {
   const dataStr = createRecordData(title, description);
   
-  const [part1, part2, part3, part4] = stringToFieldElements(dataStr);
+  const [part1, part2, part3, part4, part5, part6, part7, part8] = stringToFieldElements(dataStr);
   
   const dataHash = hashData(dataStr);
-  
   const nonce = generateNonce();
   
   return {
@@ -187,6 +180,10 @@ export function prepareCreateRecordInputs(
     data_part2: part2,
     data_part3: part3,
     data_part4: part4,
+    data_part5: part5,
+    data_part6: part6,
+    data_part7: part7,
+    data_part8: part8,
     record_type: formatRecordType(recordType),
     data_hash: dataHash,
     nonce: nonce,
@@ -203,6 +200,10 @@ export function inputsToArray(inputs: CreateRecordInputs): string[] {
     inputs.data_part2,
     inputs.data_part3,
     inputs.data_part4,
+    inputs.data_part5,
+    inputs.data_part6,
+    inputs.data_part7,
+    inputs.data_part8,
     inputs.record_type,
     inputs.data_hash,
     inputs.nonce,

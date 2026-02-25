@@ -20,7 +20,7 @@
 //
 // ============================================================================
 
-program salud_health_records_v2.aleo {
+program salud_health_records_v6.aleo {
 
     // ========================================================================
     // PROGRAM CONFIGURATION
@@ -53,14 +53,12 @@ program salud_health_records_v2.aleo {
     /// 
     /// This record is owned by the patient and contains their encrypted medical
     /// information. Only the patient can decrypt and read the contents.
-    /// The encryption happens client-side before calling create_record.
     ///
     /// Fields:
     /// - owner: The patient's Aleo address (automatic record ownership)
     /// - record_id: Unique identifier for this record (hash-based)
     /// - data_hash: Hash of the encrypted data (for integrity verification)
-    /// - data_part1-4: Encrypted medical data split into field elements
-    ///   (Each field can hold ~253 bits, giving us ~1012 bits / ~126 bytes total)
+    /// - data_part1-12: Encrypted medical data split into field elements (~360 bytes total)
     /// - record_type: Category of medical record (1=general, 2=lab, 3=prescription, etc.)
     /// - created_at: Block height when record was created (set to 0, actual in metadata)
     /// - version: Record version for future upgradability
@@ -72,6 +70,14 @@ program salud_health_records_v2.aleo {
         data_part2: field,
         data_part3: field,
         data_part4: field,
+        data_part5: field,
+        data_part6: field,
+        data_part7: field,
+        data_part8: field,
+        data_part9: field,
+        data_part10: field,
+        data_part11: field,
+        data_part12: field,
         record_type: u8,
         created_at: u32,
         version: u8,
@@ -147,7 +153,7 @@ program salud_health_records_v2.aleo {
     /// Called by patients to store their encrypted medical data on-chain.
     /// The encryption must happen client-side before calling this function.
     ///
-    /// @param data_part1-4: Encrypted medical data split into field elements
+    /// @param data_part1-12: Encrypted medical data split into field elements
     /// @param record_type: Category of record (1=general, 2=lab, 3=prescription, 4=imaging, 5=vaccination)
     /// @param data_hash: Hash of original data for integrity verification
     /// @param nonce: Client-provided random nonce for unique ID generation
@@ -159,6 +165,14 @@ program salud_health_records_v2.aleo {
         data_part2: field,
         data_part3: field,
         data_part4: field,
+        data_part5: field,
+        data_part6: field,
+        data_part7: field,
+        data_part8: field,
+        data_part9: field,
+        data_part10: field,
+        data_part11: field,
+        data_part12: field,
         record_type: u8,
         data_hash: field,
         nonce: field,
@@ -186,8 +200,16 @@ program salud_health_records_v2.aleo {
             data_part2: data_part2,
             data_part3: data_part3,
             data_part4: data_part4,
+            data_part5: data_part5,
+            data_part6: data_part6,
+            data_part7: data_part7,
+            data_part8: data_part8,
+            data_part9: data_part9,
+            data_part10: data_part10,
+            data_part11: data_part11,
+            data_part12: data_part12,
             record_type: record_type,
-            created_at: 0u32, // Placeholder - actual block height is in metadata
+            created_at: 0u32,
             version: 1u8,
         };
 

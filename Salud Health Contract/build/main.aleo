@@ -1,4 +1,4 @@
-program salud_health_records_v2.aleo;
+program salud_health_records_v6.aleo;
 
 record MedicalRecord:
     owner as address.private;
@@ -8,6 +8,14 @@ record MedicalRecord:
     data_part2 as field.private;
     data_part3 as field.private;
     data_part4 as field.private;
+    data_part5 as field.private;
+    data_part6 as field.private;
+    data_part7 as field.private;
+    data_part8 as field.private;
+    data_part9 as field.private;
+    data_part10 as field.private;
+    data_part11 as field.private;
+    data_part12 as field.private;
     record_type as u8.private;
     created_at as u32.private;
     version as u8.private;
@@ -60,20 +68,28 @@ function create_record:
     input r1 as field.private;
     input r2 as field.private;
     input r3 as field.private;
-    input r4 as u8.private;
+    input r4 as field.private;
     input r5 as field.private;
     input r6 as field.private;
-    input r7 as boolean.private;
-    gte r4 1u8 into r8;
-    lte r4 10u8 into r9;
-    and r8 r9 into r10;
-    assert.eq r10 true;
-    cast self.caller r5 r6 into r11 as RecordIdInput;
-    hash.bhp256 r11 into r12 as field;
-    cast self.caller r12 r5 r0 r1 r2 r3 r4 0u32 1u8 into r13 as MedicalRecord.record;
-    async create_record self.caller r12 r4 r7 into r14;
-    output r13 as MedicalRecord.record;
-    output r14 as salud_health_records_v2.aleo/create_record.future;
+    input r7 as field.private;
+    input r8 as field.private;
+    input r9 as field.private;
+    input r10 as field.private;
+    input r11 as field.private;
+    input r12 as u8.private;
+    input r13 as field.private;
+    input r14 as field.private;
+    input r15 as boolean.private;
+    gte r12 1u8 into r16;
+    lte r12 10u8 into r17;
+    and r16 r17 into r18;
+    assert.eq r18 true;
+    cast self.caller r13 r14 into r19 as RecordIdInput;
+    hash.bhp256 r19 into r20 as field;
+    cast self.caller r20 r13 r0 r1 r2 r3 r4 r5 r6 r7 r8 r9 r10 r11 r12 0u32 1u8 into r21 as MedicalRecord.record;
+    async create_record self.caller r20 r12 r15 into r22;
+    output r21 as MedicalRecord.record;
+    output r22 as salud_health_records_v6.aleo/create_record.future;
 
 finalize create_record:
     input r0 as address.public;
@@ -104,10 +120,10 @@ function grant_access:
     cast r0.record_id r1 self.caller r3 into r8 as AccessTokenInput;
     hash.bhp256 r8 into r9 as field;
     async grant_access self.caller r1 r0.record_id r9 r7 into r10;
-    cast r0.owner r0.record_id r0.data_hash r0.data_part1 r0.data_part2 r0.data_part3 r0.data_part4 r0.record_type r0.created_at r0.version into r11 as MedicalRecord.record;
+    cast r0.owner r0.record_id r0.data_hash r0.data_part1 r0.data_part2 r0.data_part3 r0.data_part4 r0.data_part5 r0.data_part6 r0.data_part7 r0.data_part8 r0.data_part9 r0.data_part10 r0.data_part11 r0.data_part12 r0.record_type r0.created_at r0.version into r11 as MedicalRecord.record;
     output r11 as MedicalRecord.record;
     output r9 as field.private;
-    output r10 as salud_health_records_v2.aleo/grant_access.future;
+    output r10 as salud_health_records_v6.aleo/grant_access.future;
 
 finalize grant_access:
     input r0 as address.public;
@@ -125,7 +141,7 @@ function verify_access:
     input r1 as address.private;
     input r2 as field.private;
     async verify_access r0 r1 r2 into r3;
-    output r3 as salud_health_records_v2.aleo/verify_access.future;
+    output r3 as salud_health_records_v6.aleo/verify_access.future;
 
 finalize verify_access:
     input r0 as field.public;
@@ -144,7 +160,7 @@ finalize verify_access:
 function revoke_access:
     input r0 as field.private;
     async revoke_access self.caller r0 into r1;
-    output r1 as salud_health_records_v2.aleo/revoke_access.future;
+    output r1 as salud_health_records_v6.aleo/revoke_access.future;
 
 finalize revoke_access:
     input r0 as address.public;
@@ -158,7 +174,7 @@ finalize revoke_access:
 function get_access_info:
     input r0 as field.private;
     async get_access_info r0 into r1;
-    output r1 as salud_health_records_v2.aleo/get_access_info.future;
+    output r1 as salud_health_records_v6.aleo/get_access_info.future;
 
 finalize get_access_info:
     input r0 as field.public;

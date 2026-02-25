@@ -33,7 +33,7 @@ export const WalletProvider: FC<WalletProviderProps> = ({ children }) => {
   // Must list all programs that will be used for transactions
   const programs = useMemo(() => [
     'credits.aleo',
-    'salud_health_records_v2.aleo',
+    'salud_health_records_v4.aleo',
   ], []);
 
   return (
