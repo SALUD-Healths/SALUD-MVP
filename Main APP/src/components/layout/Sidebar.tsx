@@ -9,7 +9,6 @@ import {
   HelpCircle,
   ChevronLeft,
   ChevronRight,
-  Shield,
   Stethoscope,
   LogOut,
 } from 'lucide-react';
@@ -67,17 +66,17 @@ export function Sidebar({ userType = 'patient' }: SidebarProps) {
                 exit={{ opacity: 0 }}
                 className="flex items-center gap-2"
               >
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary-500 to-primary-600">
-                  <Shield className="h-5 w-5 text-white" />
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl">
+                  <img src="/favicon.png" alt="Logo" className="h-6 w-6 rounded-md object-cover" />
                 </div>
-                <span className="text-xl font-bold text-slate-900">Salud</span>
+                <span className="text-xl font-bold text-slate-900">Salud Healths</span>
               </motion.div>
             )}
           </AnimatePresence>
           
           {collapsed && (
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 mx-auto">
-              <Shield className="h-5 w-5 text-white" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl mx-auto">
+              <img src="/favicon.png" alt="Logo" className="h-6 w-6 rounded-md object-cover" />
             </div>
           )}
         </div>
